@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>違建大亨 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/*
+VOICE: 一本正經的冷面解謎，像建築系的結構作業被做成桌上模型
+IDEA: 一座握在手機裡的街角模型：阿公的老公寓站在一小塊轉角地上，屋頂是解謎盤
+PICTURE: 固定等角視角的像素材質 3D 模型，天空隨章節從早晨走到深夜
+COLOUR and TYPE: 深夜藍框、米白紙、招牌紅、安全黃；DotGothic16 數字＋Noto Sans TC
+LAYOUT: 手機直式：上方標題列，中間舞台佔滿，下方零件列與大顆驗收鈕，全部在拇指範圍
+*/
+:root{color-scheme:light dark;--bg:light-dark(#efe6d6,#12161f);--panel:light-dark(#fbf6ec,#1e2430);--ink:light-dark(#1f1c18,#f1ead9);--quiet:light-dark(#6e665a,#a8a08f);--line:light-dark(#d7cbb6,#353d4d);--navy:#1c2a44;--deep:#0d1526;--yel:#f4c430;--red:#d8382c;--ok:#3f9b57;--blue:#3e78b2}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans TC",system-ui,sans-serif;overflow-x:clip;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.px{font-family:"DotGothic16","Noto Sans TC",monospace}
+button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+button:focus-visible{outline:3px solid var(--yel);outline-offset:2px}
+.col{max-width:560px;margin:0 auto}
+
+/* 按鈕 */
+.b{min-height:44px;padding:4px 10px;border:3px solid var(--line);background:var(--panel);cursor:pointer;font-weight:700;box-shadow:0 4px 0 var(--line);transition:transform .06s,box-shadow .06s,background .12s}
+.b:active:not(:disabled){transform:translateY(4px);box-shadow:0 0 0 var(--line)}
+.b:disabled{opacity:.4}
+.b.on{background:var(--blue);color:#fff;border-color:#24486b;box-shadow:0 4px 0 #24486b}
+.b.go{background:var(--red);border-color:#7f1a13;color:#fff;box-shadow:0 5px 0 #7f1a13;font-size:18px;letter-spacing:2px;min-height:52px}
+.b.go:active:not(:disabled){box-shadow:0 0 0 #7f1a13;transform:translateY(5px)}
+.b.sm{font-size:13px;border-width:2px;box-shadow:0 3px 0 var(--line);padding:2px 4px}
+.b.sm:active:not(:disabled){transform:translateY(3px)}
+
+/* 選關 */
+#menu{padding:10px 10px 40px}
+.hero{background:var(--navy);color:#f6efe0;border:4px solid var(--deep);box-shadow:0 6px 0 var(--deep);overflow:hidden}
+#heroSlot{position:relative;height:min(62vw,340px)}
+#heroSlot canvas,#stageSlot canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;outline:0;touch-action:none}
+.hero .txt{padding:14px 18px 18px}
+.hero h1{font:400 clamp(32px,9.5vw,46px)/1.05 "DotGothic16","Noto Sans TC",monospace;margin:0;letter-spacing:2px;text-shadow:3px 3px 0 var(--red)}
+.hero p{color:#cdd6e6;margin:8px 0 0}
+.hero .tot{margin-top:10px;font:400 20px "DotGothic16",monospace;color:var(--yel)}
+.chap{margin:22px 2px 10px;font:400 19px "DotGothic16","Noto Sans TC",monospace;display:flex;align-items:baseline;justify-content:space-between}
+.chap small{color:var(--yel);font-size:15px;text-shadow:0 1px 0 #8a6a00}
+.levels{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lv{display:grid;grid-template-columns:1fr auto;gap:0 6px;text-align:left;padding:10px 12px;min-height:86px;border:3px solid var(--line);background:var(--panel);cursor:pointer;box-shadow:0 4px 0 var(--line);transition:transform .06s,box-shadow .06s}
+.lv:active{transform:translateY(4px);box-shadow:0 0 0 var(--line)}
+.lv b{font:400 12px "DotGothic16",monospace;color:var(--quiet)}
+.lv .n{grid-column:1;font-weight:700;font-size:15.5px;line-height:1.3}
+.lv .st{grid-column:1;font-size:18px;letter-spacing:2px;color:var(--yel);text-shadow:0 1px 0 #8a6a00}
+.lv .st i{font-style:normal;color:var(--line);text-shadow:none}
+.lv .mini{grid-column:2;grid-row:1/4;align-self:center;display:grid;gap:1px;transform:rotate(-45deg) scale(.85)}
+.lv .mini i{width:8px;height:8px;background:var(--blue);opacity:.75}
+.lv .mini i.v{background:transparent}
+.rules{margin-top:22px;background:var(--panel);border:2px solid var(--line);padding:12px 14px}
+.rules h2{font:400 18px "DotGothic16","Noto Sans TC",monospace;margin:0 0 6px}
+.rules ol{margin:0;padding-left:22px}
+.rules li{margin:3px 0}
+
+/* 遊戲：佔滿一個畫面，不用捲動 */
+#game{display:none;height:100vh;height:100dvh;flex-direction:column;gap:6px;padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px))}
+.top{flex:none;display:flex;align-items:center;gap:6px;background:var(--navy);color:#f6efe0;padding:5px 6px;border:3px solid var(--deep)}
+.top h2{margin:0;font:400 17px/1.15 "DotGothic16","Noto Sans TC",monospace;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top h2 small{font-size:12px;color:#9fb0cc;margin-left:6px}
+.top .b{background:#26375a;border-color:#3b4c6b;color:#f6efe0;box-shadow:0 3px 0 var(--deep);min-width:44px;min-height:40px}
+.stageWrap{flex:1;position:relative;border:3px solid var(--deep);min-height:260px;overflow:hidden;background:#9fd0f0}
+.sky-morning{background:linear-gradient(#8fd0f5,#d9f0fa 62%,#f7efd8)}
+.sky-noon{background:linear-gradient(#4fa3e8,#a9dcf7 60%,#e9f6fb)}
+.sky-dusk{background:linear-gradient(#3b3a78,#c96a66 45%,#f2a35e 70%,#f9d08f)}
+.sky-night{background:radial-gradient(1px 1px at 12% 18%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 31% 9%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 54% 22%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 72% 12%,#fff 50%,transparent 51%),radial-gradient(1.5px 1.5px at 88% 28%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 43% 34%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 8% 42%,#fff 50%,transparent 51%),linear-gradient(#0a1030,#1f2a5a 60%,#4a3f78)}
+.orb{position:absolute;width:46px;height:46px;border-radius:50%;right:8%;top:17%;background:#fff6c8;box-shadow:0 0 0 10px rgba(255,246,200,.25),0 0 50px 16px rgba(255,240,180,.35)}
+.sky-dusk .orb{background:#ffb26b;top:46%;right:5%;box-shadow:0 0 0 10px rgba(255,178,107,.25),0 0 70px 24px rgba(255,160,90,.4)}
+.sky-night .orb{background:#eef1ff;width:36px;height:36px;box-shadow:inset -8px -5px 0 #c9cfe8,0 0 36px 8px rgba(200,210,255,.25)}
+.cloud{position:absolute;left:-110px;width:12px;height:6px;background:#fff;opacity:.9;box-shadow:12px 0 #fff,24px 0 #fff,36px 0 #fff,48px 0 #fff,12px -6px #fff,24px -6px #fff,36px -6px #fff,24px -12px #fff,60px 0 #fff;animation:drift linear infinite}
+.cloud.c1{top:22%;animation-duration:70s}.cloud.c2{top:36%;animation-duration:110s;animation-delay:-50s;transform:scale(.7)}.cloud.c3{top:15%;animation-duration:90s;animation-delay:-25s;transform:scale(1.25)}
+.sky-dusk .cloud{background:#ffd9b0;box-shadow:12px 0 #ffd9b0,24px 0 #ffd9b0,36px 0 #ffd9b0,48px 0 #ffd9b0,12px -6px #ffd9b0,24px -6px #ffd9b0,36px -6px #ffd9b0,24px -12px #ffd9b0,60px 0 #ffd9b0}
+.sky-night .cloud{opacity:.16}
+@keyframes drift{to{left:105%}}
+#stageSlot{position:absolute;inset:0}
+#labels,#fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-50%,-50%);font:11px/1 "DotGothic16",monospace;padding:1px 3px;border:1px solid #101828;border-radius:3px;white-space:nowrap}
+.lab.g{background:#6fd083;color:#0d1a10}.lab.y{background:#f4c430;color:#1d1600}.lab.r{background:#d8382c;color:#fff;animation:blink .5s steps(2) infinite}
+.lab.up{outline:2px solid #fff}
+@keyframes blink{50%{background:#fff;color:#d8382c}}
+.pop{position:absolute;transform:translate(-50%,-50%);font:400 24px "DotGothic16",monospace;color:#fff;text-shadow:0 2px 0 #1b2233,0 0 6px rgba(0,0,0,.6);animation:pop .9s ease-out forwards;white-space:nowrap}
+.pop.plus{color:#ffe36e}.pop.minus{color:#ff8a80}
+@keyframes pop{0%{opacity:0;margin-top:8px;scale:.6}15%{opacity:1;scale:1.3}30%{scale:1}100%{opacity:0;margin-top:-50px}}
+.hud{z-index:3;position:absolute;left:0;right:0;top:0;background:rgba(13,21,38,.86);color:#f6efe0;padding:5px 10px 6px;display:grid;grid-template-columns:auto 1fr;gap:0 12px;align-items:center}
+.hud .num{font:400 32px/1 "DotGothic16",monospace;color:var(--yel);display:inline-block}
+.hud .num.bump{animation:bump .25s}
+@keyframes bump{40%{transform:scale(1.4)}}
+.hud small{color:#cdd6e6;margin-left:3px;font-size:12px}
+.hud .delta{font:400 15px "DotGothic16",monospace;margin-left:5px}
+.hud .delta.p{color:#7ee08f}.hud .delta.m{color:#ff8a80}
+.goal{display:flex;gap:10px;justify-content:flex-end;font:400 13px "DotGothic16",monospace;color:#6f82a6;white-space:nowrap}
+.goal span.hit{color:var(--yel)}
+.meterBar{position:relative;height:8px;background:#26375a;margin:4px 0 0}
+.meterBar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#f4c430,#ffe36e);transition:width .3s cubic-bezier(.2,1.2,.4,1)}
+.meterBar b{position:absolute;top:-3px;width:3px;height:14px;margin-left:-1px;background:#6f82a6}
+.meterBar b.hit{background:#fff}
+.chips{z-index:3;position:absolute;left:6px;right:6px;top:50px;display:flex;gap:4px;flex-wrap:wrap;pointer-events:none}
+.chip{pointer-events:auto;font-size:12px;font-weight:700;padding:3px 7px;border:2px solid #101828;background:rgba(251,246,236,.94);color:#1f1c18;border-radius:12px;display:flex;gap:3px;align-items:center;transition:transform .12s,background .15s}
+.chip i{font-style:normal;font-weight:900}
+.chip.ok i{color:var(--ok)}.chip.bad{background:#d8382c;color:#fff}.chip.warn{background:#f4c430}
+.chip.run{transform:scale(1.18);background:#fff3b0}
+.chip.pass{background:#bfe8c8}
+#tip{z-index:3;position:absolute;left:0;right:0;bottom:0;background:rgba(13,21,38,.86);color:#f6efe0;padding:6px 10px;font-size:13px;line-height:1.4;min-height:32px;pointer-events:none}
+#tip.bad{background:rgba(150,28,20,.92);animation:shake .25s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#tip b{color:var(--yel)}
+#tip .w{color:#ffb3ab;font-weight:700}
+#bRot{z-index:3;position:absolute;right:8px;bottom:46px;display:none}
+
+/* 零件列 */
+.dock{flex:none;display:flex;gap:7px;overflow-x:auto;padding:10px 4px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.dock::-webkit-scrollbar{display:none}
+.piece{flex:none;width:74px;display:grid;justify-items:center;padding:2px 2px 4px;border:3px solid var(--line);background:var(--panel);cursor:pointer;position:relative;box-shadow:0 4px 0 var(--line);transition:transform .08s,box-shadow .08s,border-color .1s}
+.piece img,.piece canvas{width:46px;height:46px}
+.piece .nm{font-weight:700;font-size:12.5px;line-height:1.2;white-space:nowrap}
+.piece .sp{font:400 10.5px "DotGothic16",monospace;color:var(--quiet);white-space:nowrap}
+.piece .ct{position:absolute;right:-5px;top:-8px;min-width:24px;text-align:center;font:400 13px "DotGothic16",monospace;background:var(--navy);color:#fff;border:2px solid var(--deep);padding:0 3px}
+.piece .ct.bump{animation:bump .25s}
+.piece.on{border-color:var(--blue);transform:translateY(-6px);box-shadow:0 10px 0 #24486b;background:color-mix(in srgb,var(--blue) 16%,var(--panel))}
+.piece.zero{opacity:.42}
+.piece.zero .ct{background:#777}
+.piece.er{border-style:dashed}
+.row{flex:none;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.row2{flex:none;display:grid;grid-template-columns:1fr;gap:6px}
+
+/* 平面圖：蓋在舞台上，和 3D 畫面切換 */
+.planView{position:absolute;inset:0;padding:84px 8px 66px;z-index:2;background:color-mix(in srgb,var(--panel) 93%,transparent);display:none;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.planView.show{display:flex;animation:fade .15s}
+.planView .legend{font-size:11.5px;color:var(--quiet);margin:0;text-align:center;line-height:1.35}
+.plan{position:relative;flex:none}
+.pgrid{position:absolute;left:50%;top:50%;display:grid;transform:translate(-50%,-50%) rotate(-45deg)}
+.pc{border:1px solid var(--line);background:color-mix(in srgb,var(--ink) 7%,transparent);padding:0;display:grid;place-items:center}
+.pc span{transform:rotate(45deg);font:400 14px "DotGothic16",monospace;pointer-events:none}
+.pc.ring{border-style:dashed;background:transparent;opacity:.6}
+.pc.void{background:repeating-linear-gradient(45deg,transparent 0 3px,color-mix(in srgb,var(--ink) 25%,transparent) 3px 4px)}
+.pc.sb{box-shadow:inset 0 0 0 2px #ff9a3c}
+.pc.hov{outline:3px solid var(--yel);outline-offset:-2px;z-index:2;opacity:1}
+.pc.t-tin{background:#4a86c0;color:#fff}.pc.t-steel{background:#9cc9e6;color:#123}.pc.t-brick{background:#b9533a;color:#fff}.pc.t-rc{background:#b8b4ac;color:#222}.pc.t-box{background:#d9772b;color:#fff}.pc.t-loft{background:#6a5acd;color:#fff}.pc.t-frame{background:#8d98a3;color:#fff}.pc.t-garden{background:#56a35f;color:#fff}.pc.t-sign{background:#e0457a;color:#fff}.pc.t-stair,.pc.t-core{background:#6d7277;color:#fff}.pc.t-tank{background:#d5dce2;color:#222}.pc.t-balc{background:#d9d2c3;color:#222;opacity:1;border-style:solid}
+.dot{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;border:1.5px solid #101828;display:grid;place-items:center;pointer-events:none;z-index:3}
+.dot span{transform:rotate(45deg);font:400 10px "DotGothic16",monospace}
+.dot.g{background:#6fd083;color:#0d1a10}.dot.y{background:#f4c430;color:#1d1600}.dot.r{background:#d8382c;color:#fff}
+.ecc{position:absolute;border:2px dashed var(--ink);pointer-events:none;z-index:4}
+.ecc.bad{border-color:var(--red)}
+.com{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1.5px #fff);pointer-events:none;z-index:5;transition:left .25s,top .25s}
+.com::before,.com::after{content:"";position:absolute;background:var(--ink);left:5.5px;top:0;width:3px;height:14px}
+.com::after{left:0;top:5.5px;width:14px;height:3px}
+.com.bad::before,.com.bad::after{background:var(--red)}
+
+/* 對話框：從下方滑出 */
+.modal{position:fixed;inset:0;background:rgba(8,12,20,.62);display:none;align-items:flex-end;justify-content:center;z-index:9}
+.modal.show{display:flex;animation:fade .15s}
+@keyframes fade{from{opacity:0}}
+.card{background:var(--panel);max-width:560px;width:100%;border-top:5px solid var(--red);padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));text-align:center;animation:cardIn .28s cubic-bezier(.2,1.2,.4,1);max-height:88vh;overflow-y:auto}
+@keyframes cardIn{from{transform:translateY(60%);opacity:0}}
+.card h3{font:400 28px/1.15 "DotGothic16","Noto Sans TC",monospace;margin:0 0 8px}
+.card .big{font-size:52px;letter-spacing:8px;margin:0 0 4px;height:66px}
+.card .big span{display:inline-block;color:var(--line)}
+.card .big span.lit{color:var(--yel);text-shadow:0 3px 0 #8a6a00;animation:starIn .4s cubic-bezier(.2,1.8,.4,1)}
+@keyframes starIn{from{transform:scale(2.6) rotate(-30deg);opacity:0}}
+.card p{margin:0 0 10px;text-align:left}
+.card p.c{text-align:center}
+.card .hint{background:color-mix(in srgb,var(--yel) 22%,transparent);padding:8px 10px;border-left:4px solid var(--yel)}
+.card ul{text-align:left;margin:0 0 10px;padding-left:20px}
+.card .mAct{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px;margin-top:12px}
+/* 版面：左邊 3D、右邊平面圖（窄螢幕改成上下） */
+#game{gap:5px;padding:5px 5px calc(6px + env(safe-area-inset-bottom,0px))}
+.hud{position:static;flex:none;border:3px solid var(--deep);background:var(--navy);padding:2px 10px 5px}
+.hud .num{font-size:28px}
+.stageWrap{flex:1;display:flex;flex-direction:column;gap:5px;min-height:180px;border:0;background:none;overflow:visible}
+.pane3d{flex:1.3 1 0;position:relative;border:3px solid var(--deep);overflow:hidden;min-height:0;min-width:0}
+.planPane{flex:1 1 0;display:flex;flex-direction:column;gap:3px;border:3px solid var(--deep);background:var(--panel);min-height:0;min-width:0;padding:4px}
+.stageWrap{flex-direction:row}.pane3d{flex:1.15 1 0}
+.chips{position:static;justify-content:center;gap:3px;flex:none}
+.chips{gap:2px}
+.chip{font-size:11px;padding:0 4px;border-width:1.5px;gap:1px;line-height:1.6}
+.planBox{flex:1;min-height:0;min-width:0;display:grid;place-items:center;overflow:hidden}
+.plan{touch-action:none}
+.pc span{font:400 1em "DotGothic16",monospace}
+.dots{position:absolute;inset:0;pointer-events:none}
+.dot.up{box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px #101828;z-index:6;animation:bump .3s}
+#tip{position:static;flex:none;height:40px;overflow:hidden;border:3px solid var(--deep);background:var(--navy);padding:2px 8px;font-size:12.5px;line-height:1.35}
+#tip.bad{background:#961c14}
+#bRot{bottom:6px;right:6px}
+.dock{padding:9px 4px 5px;gap:6px}
+.piece{width:68px}
+.piece img,.piece canvas{width:40px;height:40px}
+.row{grid-template-columns:1fr 1fr 1fr 1.9fr;align-items:stretch}
+.row .go{font-size:16px;letter-spacing:1px;min-height:48px;padding:2px 4px}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition:none!important}}
+</style>
+</head>
+<body>
+<section id="menu" class="col">
+  <div class="hero">
+    <div id="heroSlot"></div>
+    <div class="txt">
+      <h1>違建大亨 3D</h1>
+      <p>阿公的老公寓屋頂空著。往上加蓋收租，但每根角柱都有極限、每間房都要逃得出去、每扇窗都要看得到天空。</p>
+      <div class="tot" id="totStars"></div>
+    </div>
+  </div>
+  <div id="chapters"></div>
+  <div class="rules">
+    <h2>規則一覽</h2>
+    <ol>
+      <li><b>承重：</b>每格重量平均分給四個角柱；柱子的負重是它上方所有東西壓下來的總和。任何一段超載就會塌。</li>
+      <li><b>逃生：</b>每間房都要沿著同一層走得到樓梯。</li>
+      <li><b>採光：</b>四面都被實牆擋住的房間是暗房，租金 0。架空層、花園、陽台、樓梯不擋光。</li>
+      <li><b>配重：</b>外推陽台貼著的那間房（含上面樓層）總重要 ≥ 8。</li>
+      <li><b>日照斜線：</b>橘色範圍不能蓋。每高一層，房間租金 +1。</li>
+      <li><b>耐震</b>（部分關卡）：所有加蓋的重心要落在平面圖的虛線框內。</li>
+    </ol>
+  </div>
+</section>
+
+<section id="game" class="col">
+  <div class="top">
+    <button class="b sm" id="bMenu" aria-label="回選關">←</button>
+    <h2 id="gName"></h2>
+    <button class="b sm" id="bHelp" aria-label="關卡說明">？</button>
+    <button class="b sm" id="bSound" aria-label="音效開關">♪</button>
+  </div>
+  <div class="hud">
+    <div><span class="num" id="gRent">0</span><small>租金</small><span class="delta" id="gDelta"></span></div>
+    <div><div class="goal" id="gGoal"></div><div class="meterBar" id="gBar"></div></div>
+  </div>
+  <div class="stageWrap" id="stageWrap">
+    <div class="pane3d" id="pane3d">
+      <div class="orb"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+      <div id="stageSlot"></div>
+      <div id="labels"></div>
+      <div id="fx"></div>
+      <button class="b sm" id="bRot">貨櫃轉向</button>
+    </div>
+    <div class="planPane">
+      <div class="chips" id="chips"></div>
+      <div class="planBox" id="planBox"><div class="plan" id="plan"></div></div>
+    </div>
+  </div>
+  <div id="tip"></div>
+  <div class="dock" id="dock"></div>
+  <div class="row">
+    <button class="b sm" id="bUndo">復原</button>
+    <button class="b sm" id="bXray">透視</button>
+    <button class="b sm" id="bLab">受力數字</button>
+    <button class="b go" id="bCheck">請技師驗收</button>
+  </div>
+</section>
+
+<div class="modal" id="modal"><div class="card"><h3 id="mT"></h3><div id="mB"></div><div class="mAct" id="mA"></div></div></div>
+
+<script>
+// 違建大亨 3D：規則引擎 v2（瀏覽器與 Node 共用）
+(function(root){
+const TYPES = {
+  tin:   {name:'鐵皮屋',   w:[4],   cap:2, rent:1, room:true, walk:true, desc:'輕，但柱子很細'},
+  steel: {name:'輕鋼構',   w:[4],   cap:4, rent:1, room:true, walk:true, desc:'輕又強，適合墊在下面'},
+  brick: {name:'磚造加蓋', w:[8],   cap:5, rent:2, room:true, walk:true, desc:'重，柱子粗，租金 2'},
+  rc:    {name:'RC 加蓋',  w:[12],  cap:8, rent:3, room:true, walk:true, desc:'最重最強，租金 3'},
+  box:   {name:'貨櫃屋',   w:[8,8], cap:3, rent:3, room:true, walk:true, shape:'h2', desc:'橫佔兩格，按 R 旋轉'},
+  loft:  {name:'樓中樓',   w:[8,4], cap:5, rent:4, perLv:2, room:true, walk:true, shape:'v2', desc:'直佔兩層，裡面有室內梯，可以當樓梯走'},
+  frame: {name:'架空層',   w:[4],   cap:6, rent:0, walk:true, open:true, desc:'不收租，但強、輕、不擋光、可以走'},
+  garden:{name:'空中花園', w:[8],   cap:0, rent:0, walk:true, open:true, noTop:true, noSeg:true, desc:'旁邊每間房租金 +1，不擋光，很重'},
+  sign:  {name:'廣告招牌', w:[4],   cap:0, rent:1, perLv:2, noTop:true, noSeg:true, onlyOn:['brick','rc'], desc:'只能鎖在磚造或 RC 上面，越高越賺，會擋光'},
+  balc:  {name:'外推陽台', w:[4],   cap:0, rent:2, open:true, noTop:true, hang:true, desc:'掛在房間外側，那間房要夠重才壓得住'},
+  stair: {name:'樓梯',     w:[4],   cap:4, rent:0, walk:true, open:true, stair:true, desc:'只能接在樓梯正上方，讓上層能逃生'},
+  core:  {name:'樓梯間',   w:[4],   cap:6, rent:0, walk:true, stair:true, fixed:true, desc:'原有的樓梯出口'},
+  tank:  {name:'水塔',     w:[8],   cap:6, rent:0, noTop:true, fixed:true, desc:'阿公的，不能動，上面不能蓋'},
+};
+const POST = 3, BALC_NEED = 8;
+const k3 = (x,z,lv) => x + ',' + z + ',' + lv;
+const DIRS = [[1,0],[-1,0],[0,1],[0,-1]];
+
+function cells(b){
+  const T = TYPES[b.type];
+  if(T.shape === 'h2') return b.rot ? [{x:b.x,z:b.z,lv:b.lv,w:T.w[0]},{x:b.x,z:b.z+1,lv:b.lv,w:T.w[1]}] : [{x:b.x,z:b.z,lv:b.lv,w:T.w[0]},{x:b.x+1,z:b.z,lv:b.lv,w:T.w[1]}];
+  if(T.shape === 'v2') return [{x:b.x,z:b.z,lv:b.lv,w:T.w[0]},{x:b.x,z:b.z,lv:b.lv+1,w:T.w[1]}];
+  return [{x:b.x,z:b.z,lv:b.lv,w:T.w[0]}];
+}
+function isVoid(L,x,z){ return !!(L.voids && L.voids.some(v => v[0] === x && v[1] === z)); }
+function inside(L,x,z){ return x >= 0 && x < L.W && z >= 0 && z < L.D && !isVoid(L,x,z); }
+function hmax(L,x,z){ const h = L.hmax && L.hmax[z] ? L.hmax[z][x] : undefined; return h === undefined ? L.top : h; }
+function occMap(blocks){ const m = new Map(); for(const b of blocks) for(const c of cells(b)) m.set(k3(c.x,c.z,c.lv), {b, w:c.w}); return m; }
+function corners(x,z){ return [[x,z],[x+1,z],[x,z+1],[x+1,z+1]]; }
+function anchorOf(L, b, occ){
+  for(const [dx,dz] of DIRS){ const ax = b.x+dx, az = b.z+dz; if(inside(L,ax,az)){ const o = occ.get(k3(ax,az,b.lv)); if(o && TYPES[o.b.type].room) return {a:o.b, ax, az}; } }
+  return null;
+}
+function colHeight(occ,x,z){ let h = 0; while(occ.has(k3(x,z,h))) h++; return h; }
+
+// 放置檢查：回傳 '' 代表可以
+function canPlace(L, blocks, inv, p, occ){
+  const T = TYPES[p.type]; if(!T) return '未知零件';
+  if((inv[p.type] || 0) <= 0) return '這種零件用完了';
+  occ = occ || occMap(blocks);
+  if(p.lv < 0 || p.lv >= L.top) return '超出可以蓋的高度';
+  if(T.hang){
+    if(inside(L,p.x,p.z)) return '陽台要懸空掛在屋頂外面：點房間的外側面';
+    if(occ.has(k3(p.x,p.z,p.lv))) return '這裡已經有陽台了';
+    if(!anchorOf(L,p,occ)) return '陽台要貼著同一層的房間';
+    return '';
+  }
+  for(const c of cells(p)){
+    if(!inside(L,c.x,c.z)) return isVoid(L,c.x,c.z) ? '這裡是天井，不能蓋' : '超出屋頂範圍';
+    if(occ.has(k3(c.x,c.z,c.lv))) return '這格已經有東西了';
+    if(c.lv >= L.top) return '超出可以蓋的高度';
+    if(c.lv >= hmax(L,c.x,c.z)) return '這格在日照斜線範圍內，會擋到陳阿姨家的太陽';
+    if(c.lv !== p.lv) continue;
+    if(c.lv === 0){
+      if(T.stair) return '樓梯只能接在樓梯間正上方';
+      if(T.onlyOn) return '招牌要鎖在磚造或 RC 加蓋的上面';
+      continue;
+    }
+    const o = occ.get(k3(c.x,c.z,c.lv-1));
+    if(!o) return '下面是空的，要先蓋下面那層';
+    const B = TYPES[o.b.type];
+    if(B.noTop) return B.name + '上面不能蓋東西';
+    if(T.stair && !B.stair) return '樓梯只能接在樓梯正上方';
+    if(!T.stair && B.stair) return '樓梯上面只能再接樓梯';
+    if(T.onlyOn && !T.onlyOn.includes(o.b.type)) return '招牌要鎖在磚造或 RC 加蓋的上面';
+  }
+  return '';
+}
+function canRemove(L, blocks, b, occ){
+  if(b.locked) return '這是原本就有的，不能拆';
+  occ = occ || occMap(blocks);
+  for(const c of cells(b)){ const o = occ.get(k3(c.x,c.z,c.lv+1)); if(o && o.b !== b) return '上面還有東西，要先拆上面'; }
+  for(const o of blocks) if(TYPES[o.type].hang){ const an = anchorOf(L,o,occ); if(an && an.a === b){ const rest = blocks.filter(q => q !== b); if(!anchorOf(L,o,occMap(rest))) return '有陽台掛在這間房上，要先拆陽台'; } }
+  return '';
+}
+
+// 受力：所有柱段
+function segments(L, blocks, posts){
+  posts = posts || {};
+  const occ = occMap(blocks), contrib = new Map(), capAt = new Map();
+  const add = (cx,cz,lv,amt) => { const k = cx+','+cz; if(!contrib.has(k)) contrib.set(k, []); contrib.get(k).push([lv,amt]); };
+  for(const b of blocks){
+    const T = TYPES[b.type];
+    if(T.hang){
+      const an = anchorOf(L,b,occ); if(!an) continue;
+      const mine = corners(b.x,b.z);
+      for(const [cx,cz] of corners(an.ax,an.az)) if(mine.some(q => q[0] === cx && q[1] === cz)) add(cx,cz,b.lv, T.w[0]/2);
+      continue;
+    }
+    for(const c of cells(b)) for(const [cx,cz] of corners(c.x,c.z)){
+      add(cx,cz, T.noSeg ? c.lv-1 : c.lv, c.w/4);
+      if(!T.noSeg){ const kk = cx+','+cz+','+c.lv; capAt.set(kk, (capAt.get(kk) || 0) + T.cap); }
+    }
+  }
+  const segs = [];
+  for(let cz = 0; cz <= L.D; cz++) for(let cx = 0; cx <= L.W; cx++){
+    if(!corners(cx-1,cz-1).some(([x,z]) => inside(L,x,z))) continue;
+    const list = contrib.get(cx+','+cz) || [];
+    const total = list.reduce((s,q) => s + q[1], 0);
+    const pr = posts[cx+','+cz+',-1'] || 0;
+    segs.push({cx, cz, lv:-1, key:cx+','+cz+',-1', load:total, cap:L.rcCap[cz][cx] + pr*POST, posts:pr});
+    for(let lv = 0; lv < L.top; lv++){
+      const kk = cx+','+cz+','+lv; if(!capAt.has(kk)) continue;
+      const load = list.reduce((s,q) => s + (q[0] >= lv ? q[1] : 0), 0), p = posts[kk] || 0;
+      segs.push({cx, cz, lv, key:kk, load, cap:capAt.get(kk) + p*POST, posts:p});
+    }
+  }
+  return segs;
+}
+
+// 全面檢核
+function evaluate(L, blocks, posts){
+  const occ = occMap(blocks), segs = segments(L, blocks, posts);
+  const over = segs.filter(s => s.load > s.cap);
+  // 逃生：從樓梯出發，沿同一層相鄰的可通行方塊擴散
+  const dist = new Map(), queue = [];
+  for(const b of blocks) if(TYPES[b.type].stair){ dist.set(b, 0); queue.push(b); }
+  while(queue.length){
+    const b = queue.shift();
+    for(const c of cells(b)) for(const [dx,dz] of DIRS){
+      const o = occ.get(k3(c.x+dx,c.z+dz,c.lv));
+      if(o && TYPES[o.b.type].walk && !dist.has(o.b)){ dist.set(o.b, dist.get(b)+1); queue.push(o.b); }
+    }
+  }
+  const rooms = blocks.filter(b => TYPES[b.type].room);
+  const lost = rooms.filter(b => !dist.has(b));
+  // 採光：任一側沒被實牆擋住就有窗
+  const dark = rooms.filter(b => {
+    for(const c of cells(b)) for(const [dx,dz] of DIRS){
+      const o = occ.get(k3(c.x+dx,c.z+dz,c.lv));
+      if(o && o.b === b) continue;
+      if(!o || TYPES[o.b.type].open) return false;
+    }
+    return true;
+  });
+  // 配重
+  const weak = [];
+  for(const b of blocks) if(TYPES[b.type].hang){
+    const an = anchorOf(L,b,occ); let have = 0;
+    if(an) for(let lv = b.lv; lv < L.top; lv++){ const o = occ.get(k3(an.ax,an.az,lv)); if(!o) break; have += o.w; }
+    if(have < BALC_NEED) weak.push({b, have});
+  }
+  // 耐震：重心偏移
+  let centroid = null;
+  if(L.ecc){
+    let W = 0, X = 0, Z = 0;
+    for(const b of blocks) for(const c of cells(b)){ W += c.w; X += c.w*(c.x+.5); Z += c.w*(c.z+.5); }
+    const x = W ? X/W : L.W/2, z = W ? Z/W : L.D/2;
+    centroid = {x, z, tol:L.ecc, ok: Math.abs(x - L.W/2) <= L.ecc + 1e-9 && Math.abs(z - L.D/2) <= L.ecc + 1e-9};
+  }
+  // 租金
+  const darkSet = new Set(dark);
+  const rentOf = b => {
+    const T = TYPES[b.type];
+    if(b.type === 'garden'){ const seen = new Set(); for(const [dx,dz] of DIRS){ const o = occ.get(k3(b.x+dx,b.z+dz,b.lv)); if(o && TYPES[o.b.type].room) seen.add(o.b); } return seen.size; }
+    if(darkSet.has(b)) return 0;
+    return T.rent + ((T.room || T.perLv) ? b.lv*(T.perLv || 1) : 0);
+  };
+  const rent = blocks.reduce((s,b) => s + rentOf(b), 0);
+  const ok = !over.length && !lost.length && !weak.length && (!centroid || centroid.ok);
+  return {segs, over, lost, dark, weak, centroid, rent, rentOf, dist, ok};
+}
+function postsNeeded(L, blocks){
+  let n = 0; const plan = {};
+  for(const s of segments(L, blocks, {})) if(s.load > s.cap){ const k = Math.ceil((s.load - s.cap)/POST); n += k; plan[s.key] = k; }
+  return {n, plan};
+}
+const api = {TYPES, POST, BALC_NEED, cells, canPlace, canRemove, segments, evaluate, postsNeeded, occMap, inside, isVoid, hmax, anchorOf, corners, colHeight, k3};
+if(typeof module !== 'undefined' && module.exports) module.exports = api; else root.Rules = api;
+})(this);
+
+</script>
+<script>
+{
+const LEVELS = [{"id":"a1","ch":0,"name":"四根柱子","sub":"承重","W":2,"D":2,"top":1,"rcCap":[[2,2,2],[2,4,2],[2,2,2]],"inv":{"tin":3,"brick":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"每格的重量<b>平均分給四個角柱</b>。鐵皮屋重 4，每個角各扛 1。屋頂每個角下面都有一根原有柱子，數字是「負重／承重」。","hint":"選鐵皮屋，點屋頂的格子。滑鼠停在格子上，會先預告蓋下去之後柱子的負重。","stars":[1,2,3]},{"id":"a2","ch":0,"name":"共用角柱","sub":"承重","W":3,"D":2,"top":1,"rcCap":[[1,3,3,1],[2,5,5,2],[1,3,3,1]],"inv":{"tin":3,"brick":3,"steel":1},"preset":[{"type":"core","x":1,"z":0,"lv":0}],"story":"相鄰的方塊會<b>共用角柱</b>：每個方塊的重量都壓上來。這棟的四個角特別弱（只有 1）。","hint":"右邊的「平面圖」上，圓點的數字是那根原有柱子還能再扛多少。","stars":[4,5,6]},{"id":"a3","ch":0,"name":"RC 加蓋","sub":"承重","W":3,"D":2,"top":1,"rcCap":[[2,4,4,2],[3,8,6,3],[2,4,4,2]],"inv":{"tin":2,"brick":2,"rc":2},"preset":[{"type":"core","x":0,"z":1,"lv":0}],"story":"<b>RC 加蓋</b>重 12（每角 3），租金 3。很賺，但要找得到扛得住它的角。","hint":"中間的原有柱子比較強。","stars":[6,7,8]},{"id":"a4","ch":0,"name":"樓梯往上接","sub":"逃生","W":2,"D":2,"top":3,"rcCap":[[3,4,3],[4,8,4],[3,4,3]],"inv":{"tin":4,"steel":2,"brick":1,"stair":2},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"新規則：<b>每間房都要走得到樓梯</b>（同一層前後左右相連就算）。要往上蓋，得先把樓梯接上去。而且<b>每高一層，租金 +1</b>。","hint":"上層的重量會一路壓到下層的柱子。鐵皮屋的細柱子（2）撐不了太多。","stars":[6,8,9]},{"id":"a5","ch":0,"name":"暗房租不掉","sub":"採光","W":3,"D":3,"top":1,"rcCap":[[2,3,3,2],[3,6,6,3],[3,6,6,3],[2,3,3,2]],"inv":{"tin":4,"brick":4,"rc":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"新規則：<b>四面都被擋住的房間是暗房，租金 0</b>。外面是空的就算有窗。","hint":"正中間那格蓋房間一定是暗房。值得蓋嗎？","stars":[8,10,11]},{"id":"a6","ch":0,"name":"外推陽台","sub":"配重","W":2,"D":2,"top":2,"rcCap":[[4,6,4],[6,9,6],[4,6,4]],"inv":{"tin":2,"brick":2,"balc":4,"stair":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"<b>外推陽台</b>懸空掛在屋頂外面，租金 2。它的重量壓在貼著的那間房的兩根角柱上，而且<b>那間房（含它上面的樓層）總重要 ≥ 8</b> 才壓得住。","hint":"選陽台，點房間朝外的側面，或點平面圖外圈的格子。鐵皮屋只有 4，太輕。","stars":[8,10,11]},{"id":"b1","ch":1,"name":"貨櫃屋","sub":"新零件","W":3,"D":2,"top":2,"rcCap":[[2,5,5,2],[3,8,8,3],[2,5,5,2]],"inv":{"box":2,"tin":2,"steel":1,"stair":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"<b>貨櫃屋</b>橫佔兩格、租金 3，按 R 換方向。兩格底下都要有支撐。","hint":"貨櫃中間那兩根角柱同時扛兩格的重量。","stars":[6,7,8]},{"id":"b2","ch":1,"name":"架空層","sub":"新零件","W":3,"D":3,"top":2,"rcCap":[[3,5,5,3],[5,10,10,5],[5,10,10,5],[3,5,5,3]],"inv":{"frame":2,"tin":3,"steel":1,"brick":3,"rc":1,"stair":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"<b>架空層</b>只有柱子沒有牆：不收租，但柱子很強（6）、不擋光、人可以走過去。拿來墊高、讓光進來，或當走道。","hint":"中間那格如果蓋房間會變暗房。換成架空層，上面再蓋呢？","stars":[13,16,18]},{"id":"b3","ch":1,"name":"空中花園","sub":"新零件","W":3,"D":3,"top":2,"rcCap":[[3,5,5,3],[5,10,10,5],[5,10,10,5],[3,5,5,3]],"inv":{"garden":2,"tin":4,"steel":2,"brick":3,"stair":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"<b>空中花園</b>自己不收租，但<b>前後左右每間房租金 +1</b>，而且不擋光、可以走。缺點是土很重（8），上面也不能蓋。","hint":"花園旁邊貼越多房間越賺。","stars":[15,20,22]},{"id":"b4","ch":1,"name":"廣告招牌","sub":"新零件","W":3,"D":2,"top":3,"rcCap":[[3,6,6,3],[4,10,10,4],[3,6,6,3]],"inv":{"sign":2,"brick":2,"rc":1,"tin":3,"steel":2,"stair":2},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"<b>廣告招牌</b>只能鎖在磚造或 RC 加蓋的上面，<b>越高越賺</b>（1 + 每層 2）。它上面不能蓋，而且會擋住隔壁的窗。","hint":"重的東西要放高處才能掛招牌，下面撐得住嗎？","stars":[14,18,20]},{"id":"b5","ch":1,"name":"樓中樓","sub":"新零件","W":3,"D":2,"top":3,"rcCap":[[3,6,6,3],[4,10,10,4],[3,6,6,3]],"inv":{"loft":2,"tin":3,"steel":2,"brick":2},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"這關<b>沒有樓梯零件</b>。<b>樓中樓</b>直佔兩層，裡面有室內梯，樓上的鄰居可以「借過」逃生。","hint":"樓中樓的下層要走得到樓梯間，上層旁邊的房間才算走得到。","stars":[13,17,19]},{"id":"b6","ch":1,"name":"生鏽的柱子","sub":"補強","W":3,"D":3,"top":2,"rcCap":[[3,5,5,3],[5,2,11,5],[5,11,2,5],[3,5,5,3]],"inv":{"tin":4,"steel":2,"brick":3,"rc":1,"frame":1,"stair":1,"post":2},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"屋頂中間有兩根原有柱子嚴重生鏽，<b>只剩承重 2</b>。你有兩根<b>鋼柱</b>可以補強，每根讓一段柱子承重 +3。","hint":"選鋼柱補強，點角柱上的黃色圓點。生鏽柱四周的格子都會壓到它。","stars":[12,15,17]},{"id":"c1","ch":2,"name":"日照斜線","sub":"法規","W":3,"D":3,"top":3,"rcCap":[[3,5,5,3],[5,11,11,5],[5,11,11,5],[3,5,5,3]],"hmax":[[3,2,1],[3,2,1],[3,2,1]],"inv":{"tin":4,"steel":2,"brick":2,"rc":1,"stair":2,"balc":2,"sign":1},"preset":[{"type":"core","x":0,"z":1,"lv":0}],"story":"對面的陳阿姨拿著建築技術規則來敲門：<b>橘色範圍是日照斜線，不能蓋</b>。越靠近她家那一側，能蓋的越矮。","hint":"高的集中在一側，矮的那側用陽台補租金。","stars":[15,20,22]},{"id":"c2","ch":2,"name":"阿公的水塔","sub":"障礙","W":3,"D":3,"top":3,"rcCap":[[3,6,6,3],[6,11,11,6],[6,11,11,6],[3,6,6,3]],"inv":{"tin":4,"steel":2,"brick":2,"rc":1,"box":1,"stair":2,"balc":3,"post":1},"preset":[{"type":"core","x":0,"z":0,"lv":0},{"type":"tank","x":1,"z":1,"lv":0}],"story":"阿公的水塔在屋頂正中間，又重又不能動，上面不能蓋，還會擋住旁邊房間的窗。","hint":"水塔四周的房間，至少要留一面朝外。","stars":[18,23,26]},{"id":"c3","ch":2,"name":"天井","sub":"障礙","W":3,"D":3,"top":3,"rcCap":[[3,6,6,3],[6,9,9,6],[6,9,9,6],[3,6,6,3]],"voids":[[1,1]],"inv":{"tin":4,"steel":2,"brick":3,"loft":1,"garden":1,"stair":1,"balc":3},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"這棟是回字型，中間是<b>天井</b>，不能蓋。好處是每間房都有窗，陽台也可以掛在天井裡。","hint":"平面圖上中間那格可以放陽台。","stars":[20,26,29]},{"id":"c4","ch":2,"name":"L 型屋頂","sub":"障礙","W":4,"D":3,"top":3,"rcCap":[[3,5,5,5,3],[5,9,9,9,5],[5,9,9,9,5],[3,5,5,5,3]],"voids":[[2,0],[3,0],[3,1]],"inv":{"tin":4,"steel":2,"brick":2,"rc":1,"box":1,"frame":1,"stair":2,"balc":2,"sign":1,"post":1},"preset":[{"type":"core","x":0,"z":2,"lv":0}],"story":"這塊屋頂是 L 型的。樓梯間在最角落，離另一頭很遠。","hint":"每一層都要有路走回樓梯。架空層和花園也算路。","stars":[21,27,30]},{"id":"c5","ch":2,"name":"舊鐵皮不能拆","sub":"障礙","W":3,"D":3,"top":3,"rcCap":[[3,6,6,3],[6,11,7,6],[6,11,11,6],[3,6,6,3]],"hmax":[[3,3,2],[3,3,2],[3,2,1]],"inv":{"tin":3,"steel":2,"brick":3,"rc":2,"box":1,"stair":2,"balc":3,"post":2},"preset":[{"type":"core","x":0,"z":0,"lv":0},{"type":"tank","x":2,"z":2,"lv":0},{"type":"tin","x":1,"z":1,"lv":0}],"story":"中間有一間阿公蓋的舊鐵皮屋，房客住了二十年，不能拆。它的細柱子限制了上面能蓋什麼。<b>它也是一間房，要讓房客走得到樓梯。</b>","hint":"舊鐵皮上面要嘛蓋很輕的，要嘛先補鋼柱。","stars":[19,24,27]},{"id":"c6","ch":2,"name":"地震帶","sub":"耐震","W":3,"D":3,"top":3,"rcCap":[[4,6,6,4],[6,12,12,6],[6,12,12,6],[4,6,6,4]],"hmax":[[3,3,1],[3,3,1],[3,3,1]],"ecc":0.35,"inv":{"tin":4,"steel":2,"brick":3,"rc":2,"garden":1,"stair":2,"balc":2,"sign":1},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"新規則：<b>耐震</b>。整棟加蓋的<b>重心</b>不能偏離屋頂中心太遠，否則地震一來會扭轉。平面圖上的十字是重心，要落在虛線框裡。","hint":"一側被日照斜線壓低了，重量要想辦法平衡回來。重的東西是好用的配重。","stars":[25,31,35]},{"id":"d1","ch":3,"name":"雙樓梯","sub":"綜合","W":4,"D":3,"top":3,"rcCap":[[3,5,5,5,3],[5,10,4,10,5],[5,10,10,10,5],[3,5,5,5,3]],"inv":{"tin":5,"steel":3,"brick":3,"rc":2,"box":1,"loft":1,"garden":1,"stair":2,"balc":3,"sign":1,"post":2},"preset":[{"type":"core","x":0,"z":0,"lv":0},{"type":"core","x":3,"z":2,"lv":0}],"story":"這棟有兩個樓梯間，但樓梯零件只有兩個。兩邊要各接一個，還是集中在一邊？","hint":"樓中樓也能把上下兩層接起來。","stars":[25,31,35]},{"id":"d2","ch":3,"name":"回字大樓","sub":"綜合","W":4,"D":4,"top":3,"rcCap":[[3,5,5,5,3],[5,8,8,8,5],[5,8,8,8,5],[5,8,8,8,5],[3,5,5,5,3]],"voids":[[1,1],[2,1],[1,2],[2,2]],"ecc":0.4,"inv":{"tin":6,"steel":3,"brick":4,"rc":2,"box":2,"loft":1,"frame":1,"garden":1,"stair":2,"balc":4,"sign":2,"post":2},"preset":[{"type":"core","x":0,"z":0,"lv":0}],"story":"大回字型，中間是大天井。這裡是地震帶，重心要守住。","hint":"樓梯間在角落，重量很容易偏向那一角。","stars":[28,36,40]},{"id":"d3","ch":3,"name":"長條街屋","sub":"綜合","W":5,"D":2,"top":4,"rcCap":[[3,6,6,6,6,3],[6,10,10,4,10,6],[3,6,6,6,6,3]],"hmax":[[4,4,3,2,1],[4,4,3,2,1]],"ecc":0.6,"inv":{"tin":5,"steel":3,"brick":3,"rc":2,"box":2,"loft":1,"frame":1,"garden":1,"stair":3,"balc":3,"sign":2,"post":2},"preset":[{"type":"core","x":0,"z":0,"lv":0},{"type":"tin","x":2,"z":1,"lv":0}],"story":"又窄又長的街屋。日照斜線把右邊壓得很低，但重心又不能偏左太多。","hint":"矮的那一側可以放重的東西當配重。","stars":[27,34,38]},{"id":"d4","ch":3,"name":"轉角地","sub":"綜合","W":4,"D":4,"top":3,"rcCap":[[3,5,5,5,3],[5,10,10,10,5],[5,10,3,10,5],[5,3,10,10,5],[3,5,5,5,3]],"voids":[[3,3]],"inv":{"tin":6,"steel":3,"brick":4,"rc":2,"box":2,"loft":1,"frame":2,"garden":2,"stair":2,"balc":4,"sign":2,"post":3},"preset":[{"type":"core","x":0,"z":0,"lv":0},{"type":"tank","x":2,"z":1,"lv":0},{"type":"tin","x":1,"z":2,"lv":0}],"story":"轉角缺了一格的大屋頂。水塔、舊鐵皮、兩根生鏽的柱子，都在不該在的位置。","hint":"4×4 的中間很容易變成暗房，花園和架空層可以開窗。","stars":[31,40,44]},{"id":"d5","ch":3,"name":"全部一起","sub":"綜合","W":5,"D":3,"top":3,"rcCap":[[3,5,5,5,5,3],[5,10,4,10,10,5],[5,10,10,4,10,5],[3,5,5,5,5,3]],"hmax":[[3,3,3,3,2],[3,3,3,3,2],[3,3,3,2,1]],"ecc":0.5,"inv":{"tin":6,"steel":3,"brick":4,"rc":2,"box":2,"loft":1,"frame":2,"garden":2,"stair":2,"balc":4,"sign":2,"post":3},"preset":[{"type":"core","x":0,"z":1,"lv":0},{"type":"tank","x":4,"z":0,"lv":0},{"type":"tin","x":2,"z":1,"lv":0}],"story":"所有規則一起上：承重、逃生、採光、配重、日照、耐震。陳阿姨已經站在窗邊了。","hint":"先決定樓梯和重心，再決定哪裡蓋高。","stars":[29,38,42]},{"id":"d6","ch":3,"name":"違建大亨","sub":"最終關","W":4,"D":4,"top":4,"rcCap":[[3,6,6,6,3],[6,5,11,11,6],[6,11,5,11,6],[6,11,11,11,6],[3,6,6,6,3]],"hmax":[[4,4,4,3],[4,4,3,2],[4,4,3,2],[4,3,2,1]],"ecc":0.45,"inv":{"tin":6,"steel":4,"brick":4,"rc":3,"box":2,"loft":2,"frame":2,"garden":2,"stair":3,"balc":5,"sign":2,"post":3},"preset":[{"type":"core","x":0,"z":0,"lv":0},{"type":"tank","x":3,"z":0,"lv":0},{"type":"tin","x":2,"z":2,"lv":0}],"story":"阿公的遺言：「土地不會變多，但房子可以。」這是整條巷子最大的屋頂，把它蓋成傳奇。","hint":"沒有提示了。你已經是大亨了。","win3":"結構技師：「我從業三十年，第一次看到這麼合理的違建。」陳阿姨默默放下了電話。","stars":[41,52,58]}], CHAPTERS = [{"name":"第一章　基本功","sky":"morning"},{"name":"第二章　新零件","sky":"noon"},{"name":"第三章　法規與障礙","sky":"dusk"},{"name":"第四章　大亨之路","sky":"night"}];
+const {TYPES} = Rules;
+const ORDER = ['tin','steel','brick','rc','box','loft','frame','garden','sign','balc','stair','post'];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = {get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } }, set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }};
+const buzz = p => { try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} };
+
+// ===== 音效 =====
+const SFX = (() => {
+  let ctx = null, muted = store.get('wj3d3-mute', false), nbuf = null;
+  const ac = () => { if(!ctx){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return null; ctx = new C(); } return ctx; };
+  function tone(f0, f1, dur, type, vol, delay){
+    if(muted) return; try{ const a = ac(); if(!a) return; const t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+      g.gain.setValueAtTime(vol || .15, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + dur + .03); }catch(e){}
+  }
+  function noise(dur, vol, freq, delay){
+    if(muted) return; try{ const a = ac(); if(!a) return; if(!nbuf){ nbuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const d = nbuf.getChannelData(0); for(let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1; }
+      const t = a.currentTime + (delay || 0), s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = nbuf; f.type = 'lowpass'; f.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); s.connect(f); f.connect(g); g.connect(a.destination); s.start(t); s.stop(t + dur + .03); }catch(e){}
+  }
+  return {
+    unlock(){ try{ const a = ac(); if(a && a.state === 'suspended') a.resume(); }catch(e){} },
+    place(w){ tone(190 - w*7, 45, .18, 'sine', .4, .2); noise(.09, .22, 700 + w*40, .2); },
+    remove(){ tone(520, 880, .09, 'triangle', .16); },
+    post(){ tone(900, 1400, .07, 'square', .08); tone(1400, 900, .1, 'square', .06, .07); },
+    bad(){ tone(160, 120, .12, 'square', .1); tone(125, 95, .14, 'square', .1, .1); },
+    tick(){ tone(820, 820, .05, 'triangle', .12); },
+    ok(){ tone(660, 990, .09, 'triangle', .14); },
+    star(i){ tone([660, 880, 1175][i] || 660, [660, 880, 1175][i] || 660, .3, 'triangle', .2); tone(([660, 880, 1175][i] || 660)*2, ([660, 880, 1175][i] || 660)*2, .2, 'sine', .08, .03); },
+    fail(){ tone(320, 110, .45, 'sawtooth', .12); },
+    collapse(){ noise(1, .5, 260); tone(90, 28, .9, 'sawtooth', .18); },
+    click(){ tone(540, 540, .03, 'square', .05); },
+    select(){ tone(700, 900, .05, 'triangle', .1); },
+    get muted(){ return muted; }, toggle(){ muted = !muted; store.set('wj3d3-mute', muted); return muted; },
+  };
+})();
+
+// ===== 狀態 =====
+let L = null, li = 0, st = null, hist = [], tool = 'tin', rot = 0, showLabels = false, xray = false, mode = 'menu', busy = false;
+let hover = null, hoverKey = '', prop = null, after = null, lastEval = null, justPlaced = null, chipState = null;
+let flashKeys = new Set(), flashTimer = 0, nid = 1;
+const stars = store.get('wj3d3-stars', {});
+function newState(lv){ return {blocks:(lv.preset || []).map(p => ({...p, rot:p.rot || 0, id:'p'+(nid++), locked:true})), posts:{}, inv:Object.assign({tin:0,steel:0,brick:0,rc:0,box:0,loft:0,frame:0,garden:0,sign:0,balc:0,stair:0,post:0}, lv.inv)}; }
+
+// ===== three.js =====
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x000000, 0);
+const cvs = renderer.domElement;
+const scene = new THREE.Scene();
+const cam = new THREE.OrthographicCamera(-5,5,5,-5,-200,400);
+const ISO = -3*Math.PI/4, PITCH = .66;
+let menuYaw = ISO;
+const hemi = new THREE.HemisphereLight(0xdfe9ff, 0x6b5a48, .8); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1d6, .85); sun.castShadow = true; sun.shadow.mapSize.set(1024,1024); sun.shadow.bias = -.0015;
+Object.assign(sun.shadow.camera, {left:-9,right:9,top:9,bottom:-9,near:1,far:70}); scene.add(sun); scene.add(sun.target);
+const world = new THREE.Group(); scene.add(world);
+const RF = 2, LV = 1, roofY = RF;
+let envGroup = null, blockGroup = new THREE.Group(), overlayGroup = new THREE.Group(), ghostGroup = new THREE.Group(), statusGroup = new THREE.Group(), fxGroup = new THREE.Group();
+world.add(blockGroup, overlayGroup, ghostGroup, statusGroup, fxGroup);
+const meshes = new Map();
+let tiles = [], markView = [], colMeshes = [];
+const fx = {load:0, egress:0, weight:0, light:0, quake:0, quakeAmp:.012, egDist:null};
+let shakeT = 0;
+
+// --- 補間 ---
+const tweens = [];
+function tween(dur, fn, done){ tweens.push({t:performance.now(), dur, fn, done}); }
+const eOut = k => 1 - (1-k)*(1-k)*(1-k), eIn = k => k*k;
+
+// --- 像素材質 ---
+const texCache = {};
+function canvasTex(key, w, h, draw){
+  if(texCache[key]) return texCache[key];
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return texCache[key] = t;
+}
+const R = (g,x,y,w,h,c) => { g.fillStyle = c; g.fillRect(x,y,w,h); };
+const speck = (g,w,h,c,n) => { for(let k = 0; k < n; k++) R(g,(k*37+11)%w,(k*23+5)%h,1,1,c); };
+const TX = {
+  tin: () => canvasTex('tin',32,32,(g,w,h) => { R(g,0,0,w,h,'#4a86c0'); for(let x = 0; x < w; x += 4){ R(g,x,0,1,h,'#356a9c'); R(g,x+1,0,1,h,'#6aa2d6'); } R(g,0,h-3,w,3,'#2c4f72'); R(g,5,9,13,11,'#22303f'); R(g,6,10,11,9,'#f6dc8c'); R(g,11,10,1,9,'#22303f'); R(g,6,14,11,1,'#22303f'); R(g,21,11,8,21,'#8a8f96'); R(g,22,12,6,19,'#9aa0a7'); R(g,27,22,1,2,'#222'); }),
+  tinRoof: () => canvasTex('tinR',16,16,(g,w,h) => { R(g,0,0,w,h,'#2f5f8f'); for(let x = 0; x < w; x += 3) R(g,x,0,1,h,'#88b6e0'); }),
+  brick: () => canvasTex('brick',32,32,(g,w,h) => { R(g,0,0,w,h,'#b9533a'); for(let y = 0, r = 0; y < h; y += 4, r++){ R(g,0,y,w,1,'#8d3a26'); for(let x = (r%2)*4; x < w; x += 8) R(g,x,y+1,1,3,'#8d3a26'); } speck(g,w,h,'#cf6a50',14); R(g,8,8,16,15,'#2a3340'); R(g,9,9,14,13,'#f0c86a'); R(g,15,9,2,13,'#2a3340'); R(g,9,15,14,1,'#2a3340'); R(g,7,23,18,2,'#c9c2b5'); }),
+  steel: () => canvasTex('steel',32,32,(g,w,h) => { R(g,0,0,w,h,'#9cc9e6'); R(g,0,0,w,13,'#c2e2f3'); for(let k = 5; k < w; k += 11) R(g,k,4,3,13,'rgba(255,255,255,.45)'); R(g,0,0,w,3,'#3f4852'); R(g,0,h-3,w,3,'#3f4852'); R(g,0,0,3,h,'#3f4852'); R(g,w-3,0,3,h,'#3f4852'); R(g,15,0,2,h,'#3f4852'); R(g,5,h-11,6,8,'#3b8f4a'); R(g,6,h-14,4,4,'#56b36a'); R(g,20,h-9,8,6,'#e9d7b0'); }),
+  rc: () => canvasTex('rc',32,32,(g,w,h) => { R(g,0,0,w,h,'#bdb9b0'); speck(g,w,h,'#a29e96',46); R(g,0,0,w,2,'#d8d4cc'); R(g,0,15,w,1,'#a8a49c'); R(g,5,5,22,14,'#434b54'); R(g,6,6,20,12,'#a9cde3'); R(g,6,6,20,4,'#d3e9f4'); R(g,15,6,2,12,'#434b54'); R(g,4,19,24,2,'#8f8b84'); R(g,6,23,20,1,'#6d6a64'); for(let k = 0; k < 7; k++) R(g,6+k*3,23,1,6,'#6d6a64'); }),
+  box: () => canvasTex('box',32,32,(g,w,h) => { R(g,0,0,w,h,'#d9772b'); for(let x = 0; x < w; x += 4) R(g,x,0,2,h,'#bf6420'); R(g,0,0,w,2,'#7a3d10'); R(g,0,h-2,w,2,'#7a3d10'); R(g,9,8,14,11,'#22303f'); R(g,10,9,12,9,'#f6dc8c'); R(g,15,9,2,9,'#22303f'); R(g,3,24,8,4,'#f1e4c0'); }),
+  loft: () => canvasTex('loft',32,64,(g,w,h) => { R(g,0,0,w,h,'#7c6fd6'); R(g,2,2,w-4,h-4,'#b9dcf0'); R(g,2,2,w-4,12,'#d6ecf8'); R(g,0,30,w,4,'#4a3fa0'); for(const x of [0,15,w-3]) R(g,x,0,x === 15 ? 2 : 3,h,'#4a3fa0'); R(g,0,0,w,3,'#4a3fa0'); R(g,0,h-3,w,3,'#4a3fa0'); g.strokeStyle = '#4a3fa0'; g.lineWidth = 2; g.beginPath(); g.moveTo(4,58); g.lineTo(13,36); g.stroke(); for(let k = 0; k < 4; k++) R(g,5+k*2,54-k*5,4,1,'#4a3fa0'); R(g,19,48,8,10,'#e9d7b0'); R(g,20,14,7,10,'#f0c86a'); }),
+  core: () => canvasTex('core',32,32,(g,w,h) => { R(g,0,0,w,h,'#cfc5b4'); for(let y = 2; y < h; y += 4) R(g,0,y,w,1,'#bdb19c'); R(g,9,8,14,24,'#5c3f2b'); R(g,10,9,12,23,'#7a563c'); R(g,12,12,8,7,'#9cc3d9'); R(g,20,22,2,2,'#e6c04a'); R(g,8,4,16,3,'#3f9b57'); }),
+  grass: () => canvasTex('grass',16,16,(g,w,h) => { R(g,0,0,w,h,'#5aa862'); speck(g,w,h,'#3f8f4a',22); speck(g,w,h,'#84c98a',9); }),
+  tile: () => canvasTex('tile',16,16,(g,w,h) => { R(g,0,0,w,h,'#dccdb2'); for(let y = 0; y < h; y += 4){ R(g,0,y,w,1,'#c7b799'); for(let x = (y/4%2)*4; x < w; x += 8) R(g,x,y,1,4,'#c7b799'); } speck(g,w,h,'#e8dcc5',8); }),
+  roof: () => canvasTex('roof',16,16,(g,w,h) => { R(g,0,0,w,h,'#93a08e'); speck(g,w,h,'#7f8b7a',26); R(g,0,0,w,1,'#b3bfae'); R(g,0,0,1,h,'#b3bfae'); }),
+  paver: () => canvasTex('paver',16,16,(g,w,h) => { R(g,0,0,w,h,'#c9c2b6'); R(g,0,0,w,1,'#aba498'); R(g,0,8,w,1,'#aba498'); R(g,0,0,1,8,'#aba498'); R(g,8,8,1,8,'#aba498'); speck(g,w,h,'#d8d2c8',6); }),
+  road: () => canvasTex('road',16,16,(g,w,h) => { R(g,0,0,w,h,'#4b4d55'); speck(g,w,h,'#3d3f46',30); speck(g,w,h,'#5c5e66',8); }),
+  win: lit => canvasTex('win'+lit,32,32,(g) => { g.clearRect(0,0,32,32); R(g,4,6,24,18,'#4d5661'); R(g,5,7,22,16,lit ? '#f6d77c' : '#a9cde3'); R(g,5,7,22,6,lit ? '#fbe7a6' : '#d3e9f4'); R(g,16,7,1,16,'#4d5661'); for(let k = 0; k < 6; k++) R(g,4+k*5,5,1,20,'#2f2f2f'); R(g,3,5,26,1,'#2f2f2f'); R(g,3,24,26,1,'#2f2f2f'); }),
+  shop: () => canvasTex('shop',32,32,(g) => { g.clearRect(0,0,32,32); R(g,2,8,28,24,'#8e9399'); for(let y = 8; y < 32; y += 3) R(g,2,y,28,1,'#6f747a'); R(g,1,1,30,7,'#d8382c'); R(g,1,1,30,1,'#ff7a6b'); g.fillStyle = '#fff'; g.font = 'bold 6px sans-serif'; g.fillText('阿公五金', 4, 7); }),
+  sign: () => canvasTex('sign',48,32,(g,w,h) => { R(g,0,0,w,h,'#1b1030'); R(g,1,1,w-2,h-2,'#e0457a'); R(g,3,3,w-6,h-6,'#1b1030'); g.fillStyle = '#ffe36e'; g.font = 'bold 18px "Noto Sans TC",sans-serif'; g.textAlign = 'center'; g.fillText('出租', w/2, 23); }),
+};
+function mat(tex, extra){ return new THREE.MeshLambertMaterial(Object.assign({map:tex}, extra)); }
+const plain = (c, extra) => new THREE.MeshLambertMaterial(Object.assign({color:c}, extra));
+function repTex(tex, rx, ry){ const t = tex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return t; }
+
+// --- 零件模型：外層群組的原點在底面中心 ---
+function blockMesh(b, ghost){
+  const outer = new THREE.Group(), g = new THREE.Group(); outer.add(g);
+  const T = TYPES[b.type], t = b.type;
+  const sx = T.shape === 'h2' && !b.rot ? 2 : 1, sz = T.shape === 'h2' && b.rot ? 2 : 1;
+  g.position.set(-sx/2, 0, -sz/2);
+  const mats = [], M = m => { mats.push(m); return m; }, P = (c, e) => M(plain(c, e)), X = (tex, e) => M(mat(tex, e));
+  const add = (geo, m, x, y, z, par) => { const me = new THREE.Mesh(geo, m); me.position.set(x,y,z); me.castShadow = me.receiveShadow = !ghost; (par || g).add(me); return me; };
+  const bx = (w,h,d,m,x,y,z,par) => add(new THREE.BoxGeometry(w,h,d), m, x,y,z, par);
+  const w = sx - .1, d = sz - .1, cx = sx/2, cz = sz/2;
+  if(t === 'tin'){ bx(w,.72,d,X(TX.tin()),cx,.36,cz); const r = bx(w+.16,.07,d+.16,X(TX.tinRoof()),cx,.77,cz); r.rotation.z = .07; bx(.2,.14,.1,P(0xe9ecef),.72,.5,.02); }
+  else if(t === 'steel'){ bx(w,.86,d,X(TX.steel()),cx,.43,cz); bx(w+.05,.07,d+.05,P(0x3f4852),cx,.9,cz); }
+  else if(t === 'brick'){ bx(w,.86,d,X(TX.brick()),cx,.43,cz); bx(w+.08,.08,d+.08,P(0xc9c2b5),cx,.9,cz); bx(.12,.2,.12,P(0x8d3a26),.75,1,.72); }
+  else if(t === 'rc'){ bx(w,.9,d,X(TX.rc()),cx,.45,cz); bx(w+.1,.08,d+.1,P(0xd8d4cc),cx,.94,cz); }
+  else if(t === 'box'){
+    const short = X(TX.box()), long = X(repTex(TX.box(), 2, 1)), top = P(0xb85f1d);
+    bx(w,.8,d, sx === 2 ? [short,short,top,top,long,long] : [long,long,top,top,short,short], cx,.4,cz);
+    const pm = P(0x7a3d10); for(const px of [.06, sx-.06]) for(const pz of [.06, sz-.06]) bx(.08,.84,.08,pm,px,.42,pz);
+  }
+  else if(t === 'loft'){ bx(w,1.86,d,X(TX.loft()),cx,.93,cz); bx(w+.06,.08,d+.06,P(0x4a3fa0),cx,1.9,cz); }
+  else if(t === 'frame'){ const pm = P(0x5a646e); for(const px of [.1,.9]) for(const pz of [.1,.9]) bx(.1,.86,.1,pm,px,.43,pz); bx(w+.02,.1,d+.02,P(0xb8b4ac),cx,.9,cz); bx(w,.03,d,P(0x9aa39a),cx,.015,cz); bx(.2,.16,.2,P(0xa0522d),.3,.1,.68); add(new THREE.IcosahedronGeometry(.14,0),P(0x56b36a,{flatShading:true}),.3,.28,.68); }
+  else if(t === 'garden'){
+    bx(w,.12,d,X(TX.grass()),cx,.06,cz); bx(w+.04,.06,d+.04,P(0x8a6b4a),cx,.03,cz);
+    const sw = new THREE.Group(); sw.position.set(.62,.12,.6); g.add(sw); outer.userData.sway = sw;
+    add(new THREE.CylinderGeometry(.04,.06,.34,6),P(0x7a563c),0,.17,0,sw); add(new THREE.IcosahedronGeometry(.27,0),P(0x3f9b57,{flatShading:true}),0,.52,0,sw); add(new THREE.IcosahedronGeometry(.17,0),P(0x56b36a,{flatShading:true}),.1,.72,.05,sw);
+    add(new THREE.IcosahedronGeometry(.13,0),P(0x4aa457,{flatShading:true}),.26,.22,.3); bx(.3,.05,.1,P(0xb98a55),.28,.2,.74);
+    for(const [fx_,fz,c] of [[.2,.55,0xf4c430],[.42,.2,0xe0457a],[.8,.25,0xffffff]]) bx(.06,.06,.06,P(c),fx_,.16,fz);
+  }
+  else if(t === 'sign'){
+    const pm = P(0x3f4852); bx(.06,.34,.06,pm,.14,.17,.14); bx(.06,.34,.06,pm,.86,.17,.14); bx(.06,.34,.06,pm,.14,.17,.86);
+    const neon = M(new THREE.MeshBasicMaterial({map:TX.sign()})); outer.userData.neon = neon;
+    bx(.9,.56,.06,neon,.5,.6,.1); bx(.06,.56,.9,neon,.1,.6,.5);
+  }
+  else if(t === 'balc'){ bx(.92,.08,.92,P(0xd9d2c3),.5,.04,.5); const rm = P(0x4d5661); bx(.92,.05,.04,rm,.5,.46,.04); bx(.92,.05,.04,rm,.5,.46,.96); bx(.04,.05,.92,rm,.04,.46,.5); bx(.04,.05,.92,rm,.96,.46,.5); for(let k = 0; k < 5; k++){ bx(.03,.4,.03,rm,.06+k*.22,.26,.04); bx(.03,.4,.03,rm,.06+k*.22,.26,.96); bx(.03,.4,.03,rm,.04,.26,.06+k*.22); bx(.03,.4,.03,rm,.96,.26,.06+k*.22); } bx(.2,.16,.2,P(0xa0522d),.7,.16,.7); add(new THREE.IcosahedronGeometry(.13,0),P(0x56b36a,{flatShading:true}),.7,.34,.7); }
+  else if(t === 'stair'){ const pm = P(0x5a646e), sm = P(0xaab1b8); for(const px of [.1,.9]) for(const pz of [.1,.9]) bx(.06,.94,.06,pm,px,.47,pz); for(let s = 0; s < 6; s++) bx(.66,.05,.15,sm,.5,.12+s*.14,.16+s*.135); bx(.86,.04,.3,sm,.5,.92,.84); const rl = bx(.04,.04,.95,pm,.14,.75,.5); rl.rotation.x = -.78; }
+  else if(t === 'core'){ bx(w,.92,d,X(TX.core()),cx,.46,cz); bx(w+.1,.08,d+.1,P(0xbdb19c),cx,.96,cz); }
+  else if(t === 'tank'){ const lm = P(0x6d7277); for(const px of [.24,.76]) for(const pz of [.24,.76]) bx(.06,.3,.06,lm,px,.15,pz); bx(.66,.05,.66,lm,.5,.3,.5); add(new THREE.CylinderGeometry(.34,.34,.52,14),M(new THREE.MeshPhongMaterial({color:0xd5dce2, shininess:90})),.5,.58,.5); add(new THREE.CylinderGeometry(.16,.34,.1,14),P(0xaab3bb),.5,.89,.5); }
+  for(const m of mats){ m.userData = {base:m.color.clone(), op:m.opacity, tr:m.transparent}; }
+  if(ghost) for(const m of mats){ m.transparent = true; m.opacity = .6; m.depthWrite = false; }
+  outer.userData.mats = mats; outer.userData.sx = sx; outer.userData.sz = sz;
+  return outer;
+}
+function wpos(b){ const T = TYPES[b.type], sx = T.shape === 'h2' && !b.rot ? 2 : 1, sz = T.shape === 'h2' && b.rot ? 2 : 1; return new THREE.Vector3(b.x + sx/2, roofY + b.lv*LV, b.z + sz/2); }
+function disposeGroup(o){ o.traverse(c => { if(c.geometry) c.geometry.dispose(); if(c.material){ (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => m.dispose()); } }); }
+
+// --- 街角模型 ---
+function buildEnv(lv){
+  if(envGroup){ world.remove(envGroup); disposeGroup(envGroup); }
+  envGroup = new THREE.Group(); world.add(envGroup);
+  const W = lv.W, D = lv.D, E = envGroup, sky = CHAPTERS[lv.ch || 0].sky, night = sky === 'night', dusk = sky === 'dusk';
+  const add = (geo, m, x, y, z, cst) => { const me = new THREE.Mesh(geo, m); me.position.set(x,y,z); me.receiveShadow = true; me.castShadow = cst !== false; E.add(me); return me; };
+  const bx = (w,h,d,m,x,y,z,cst) => add(new THREE.BoxGeometry(w,h,d), m, x,y,z, cst);
+  const ins = (x,z) => Rules.inside(lv,x,z);
+  // 地塊
+  const x0 = -1.7, x1 = W + .7, z0 = -1.7, z1 = D + .7, iw = x1 - x0, id = z1 - z0;
+  const pv = mat(repTex(TX.paver(), iw*2, id*2)), earth = plain(0x7a5c43), earth2 = plain(0x654a36);
+  bx(iw,.5,id,[earth,earth2,pv,earth,earth,earth2],(x0+x1)/2,-.25,(z0+z1)/2,false);
+  bx(iw,.1,id,plain(0x4a3526),(x0+x1)/2,-.55,(z0+z1)/2,false);
+  const rd = mat(repTex(TX.road(), 6, 2));
+  bx(iw,.02,.62,rd,(x0+x1)/2,.01,z0+.31,false); bx(.62,.02,id,rd,x0+.31,.012,(z0+z1)/2,false);
+  for(let k = x0 + 1.3; k < x1 - .3; k += .9) bx(.4,.01,.05,plain(0xe6d36a),k,.025,z0+.31,false);
+  for(let k = z0 + 1.3; k < z1 - .3; k += .9) bx(.05,.01,.4,plain(0xe6d36a),x0+.31,.025,k,false);
+  for(let k = 0; k < 4; k++) bx(.1,.01,.5,plain(0xf1efe8),x0+.8+k*.2,.026,z0+.31,false);
+  // 建築本體
+  const tile = mat(repTex(TX.tile(), 2, RF*2)), rf = mat(TX.roof());
+  const winT = mat(TX.win(night || dusk), {transparent:true}), winD = mat(TX.win(false), {transparent:true});
+  const litWin = () => (night || dusk) ? (Math.random() < .65 ? winT : winD) : winD;
+  let shopDone = false;
+  tiles = [];
+  for(let z = 0; z < D; z++) for(let x = 0; x < W; x++){
+    if(!ins(x,z)) continue;
+    bx(1,RF,1,[tile,tile,rf,tile,tile,tile],x+.5,RF/2,z+.5);
+    if(!ins(x,z-1)){ for(let f = 0; f < RF; f++){ const shop = f === 0 && !shopDone; if(shop) shopDone = true; const p = add(new THREE.PlaneGeometry(.92,.92), shop ? mat(TX.shop(), {transparent:true}) : litWin(), x+.5, f+.5, z-.012, false); p.rotation.y = Math.PI; if(shop){ const aw = bx(.96,.04,.3,plain(0xd8382c),x+.5,.86,z-.14); aw.rotation.x = -.35; } } bx(1.04,.08,.06,plain(0xa89a82),x+.5,1,z-.03); if((x+z)%2 === 0) bx(.22,.15,.12,plain(0xe9ecef),x+.82,1.28,z-.07); }
+    if(!ins(x-1,z)){ for(let f = 0; f < RF; f++){ const p = add(new THREE.PlaneGeometry(.92,.92), litWin(), x-.012, f+.5, z+.5, false); p.rotation.y = -Math.PI/2; } bx(.06,.08,1.04,plain(0xa89a82),x-.03,1,z+.5); if((x+z)%2 === 1) bx(.12,.15,.22,plain(0xe9ecef),x-.07,.3,z+.2); }
+    // 女兒牆
+    const par = plain(0xcbbca1);
+    if(!ins(x,z-1)) bx(1.06,.14,.06,par,x+.5,RF+.07,z-.01); if(!ins(x,z+1)) bx(1.06,.14,.06,par,x+.5,RF+.07,z+1.01);
+    if(!ins(x-1,z)) bx(.06,.14,1.06,par,x-.01,RF+.07,z+.5); if(!ins(x+1,z)) bx(.06,.14,1.06,par,x+1.01,RF+.07,z+.5);
+    // 可點的屋頂格與格線
+    const t = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false})); t.rotation.x = -Math.PI/2; t.position.set(x+.5, roofY+.01, z+.5); t.userData = {tile:true, x, z}; E.add(t); tiles.push(t);
+    const line = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(.94,.94)), new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:.4})); line.rotation.x = -Math.PI/2; line.position.set(x+.5, roofY+.012, z+.5); E.add(line);
+  }
+  for(const v of (lv.voids || [])) bx(.96,.02,.96,mat(TX.grass()),v[0]+.5,.012,v[1]+.5,false);
+  // 招牌
+  bx(.1,.9,.34,plain(0xd8382c),-.07,1.3,.5); bx(.03,.7,.24,new THREE.MeshBasicMaterial({color:0xf4c430}),-.125,1.3,.5,false);
+  // 路燈、機車、樹、消防栓
+  const lampM = new THREE.MeshBasicMaterial({color:(night || dusk) ? 0xfff0a8 : 0xf1efe8});
+  add(new THREE.CylinderGeometry(.035,.05,2.1,6),plain(0x3f4852),-.8,1.05,-.8); bx(.36,.04,.04,plain(0x3f4852),-.65,2.08,-.8); bx(.16,.05,.1,lampM,-.51,2.04,-.8,false);
+  if(night || dusk){ const pl = new THREE.PointLight(0xffe2a0, night ? .9 : .5, 5); pl.position.set(-.51,1.9,-.8); E.add(pl); }
+  bx(.46,.2,.16,plain(0xd8382c),W*.5+.3,.2,-.62); bx(.12,.16,.14,plain(0x22262c),W*.5+.42,.34,-.62); for(const dx of [.12,.48]){ const wh = add(new THREE.CylinderGeometry(.09,.09,.05,10),plain(0x22262c),W*.5+dx,.09,-.62); wh.rotation.x = Math.PI/2; } bx(.04,.2,.2,plain(0x555b61),W*.5+.1,.36,-.62);
+  const tr = new THREE.Group(); tr.position.set(-.75,0,D*.5+.6); E.add(tr); E.userData.tree = tr;
+  const tm = (geo, m, x, y, z) => { const me = new THREE.Mesh(geo, m); me.position.set(x,y,z); me.castShadow = true; tr.add(me); };
+  tm(new THREE.CylinderGeometry(.05,.08,.7,6),plain(0x7a563c),0,.35,0); tm(new THREE.IcosahedronGeometry(.36,0),plain(night ? 0x2f6b4a : 0x3f9b57,{flatShading:true}),0,.9,0); tm(new THREE.IcosahedronGeometry(.24,0),plain(night ? 0x3a7a55 : 0x56b36a,{flatShading:true}),.12,1.2,.06);
+  bx(.3,.06,.3,plain(0x8d8a84),-.75,.03,D*.5+.6,false);
+  bx(.1,.22,.1,plain(0xd8382c),-.6,.11,-.2); bx(.14,.05,.14,plain(0xb02a20),-.6,.24,-.2);
+  // 日照斜線
+  for(let z = 0; z < D; z++) for(let x = 0; x < W; x++){
+    if(!ins(x,z)) continue; const hm = Rules.hmax(lv,x,z); if(hm >= lv.top) continue;
+    const hh = (lv.top - hm)*LV, m = new THREE.Mesh(new THREE.BoxGeometry(.98,hh,.98), new THREE.MeshBasicMaterial({color:0xff9a3c, transparent:true, opacity:.16, depthWrite:false})); m.position.set(x+.5, roofY + hm*LV + hh/2, z+.5); E.add(m);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({color:0xff9a3c, transparent:true, opacity:.75})));
+  }
+  // 光線
+  const set = {morning:[0xe6f0ff,0x7a6a58,.76,0xfff3dc,.82], noon:[0xf4f8ff,0x7a6a58,.74,0xfffaf0,.8], dusk:[0xc9b3e6,0x6b4a48,.7,0xffb070,.85], night:[0x8a9ad6,0x2a2a48,.62,0xaab8ff,.5]}[sky];
+  hemi.color.setHex(set[0]); hemi.groundColor.setHex(set[1]); hemi.intensity = set[2]; sun.color.setHex(set[3]); sun.intensity = set[4];
+  $('pane3d').className = 'pane3d sky-' + sky;
+}
+
+// --- 方塊同步 ---
+function setBid(m, id){ m.traverse(o => { o.userData.bid = id; }); }
+function puff(pos, n, col){
+  for(let i = 0; i < (n || 8); i++){
+    const a = i/(n || 8)*Math.PI*2, m = new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.12), new THREE.MeshBasicMaterial({color:col || 0xf1e9da, transparent:true})); m.position.copy(pos); m.position.y += .08; fxGroup.add(m);
+    const dx = Math.cos(a)*.55, dz = Math.sin(a)*.55;
+    tween(420, k => { const e = eOut(k); m.position.set(pos.x + dx*e, pos.y + .08 + .25*Math.sin(k*Math.PI), pos.z + dz*e); m.scale.setScalar(1 - k*.7); m.material.opacity = 1 - k; }, () => { fxGroup.remove(m); m.geometry.dispose(); m.material.dispose(); });
+  }
+}
+function syncBlocks(ev){
+  const ids = new Set(st.blocks.map(b => b.id));
+  for(const [id, m] of [...meshes]) if(!ids.has(id)){ meshes.delete(id); puff(m.position, 6); tween(150, k => m.scale.setScalar(Math.max(.02, 1 - k)), () => { blockGroup.remove(m); disposeGroup(m); }); }
+  const lost = new Set(ev.lost), dark = new Set(ev.dark), weak = new Set(ev.weak.map(w => w.b));
+  for(const b of st.blocks){
+    let m = meshes.get(b.id);
+    if(!m){
+      m = blockMesh(b, false); m.position.copy(wpos(b)); setBid(m, b.id); blockGroup.add(m); meshes.set(b.id, m);
+      if(b.id === justPlaced){
+        const y = m.position.y, pos = m.position.clone(); m.position.y = y + 1.5; m.scale.set(.9,.9,.9);
+        tween(200, k => { m.position.y = y + 1.5*(1 - eIn(k)); }, () => { m.position.y = y; puff(pos, 9); shakeT = performance.now() + 90; tween(230, k => { const s = Math.sin(k*Math.PI); m.scale.set(1 + .1*s, 1 - .2*s, 1 + .1*s); }, () => m.scale.set(1,1,1)); });
+      }
+    }
+    m.userData.status = {lost:lost.has(b), dark:dark.has(b), weak:weak.has(b), room:!!TYPES[b.type].room, type:b.type, home:wpos(b)};
+    applyTint(m);
+  }
+  justPlaced = null;
+  // 狀態牌
+  while(statusGroup.children.length){ const s = statusGroup.children.pop(); s.material.map.dispose(); s.material.dispose(); }
+  for(const b of st.blocks){ const t = lost.has(b) ? ['走不到', '#d8382c'] : weak.has(b) ? ['壓不住', '#d8382c'] : dark.has(b) ? ['暗房', '#1b2233'] : null; if(t) statusGroup.add(badge(t[0], t[1], b)); }
+}
+function applyTint(m){
+  const s = m.userData.status || {};
+  for(const mt of m.userData.mats){ const u = mt.userData; mt.color.copy(u.base).multiplyScalar(s.dark ? .42 : 1); mt.transparent = xray ? true : u.tr; mt.opacity = xray ? .28 : u.op; mt.depthWrite = !xray; mt.needsUpdate = true; }
+}
+function badge(text, bg, b){
+  const c = document.createElement('canvas'); c.width = 160; c.height = 56; const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.beginPath(); g.roundRect ? g.roundRect(2,2,156,52,26) : g.rect(2,2,156,52); g.fill(); g.fillStyle = bg; g.beginPath(); g.roundRect ? g.roundRect(6,6,148,44,22) : g.rect(6,6,148,44); g.fill();
+  g.fillStyle = '#fff'; g.font = 'bold 30px "Noto Sans TC",sans-serif'; g.textAlign = 'center'; g.fillText(text, 80, 39);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c), depthTest:false})); const p = wpos(b); const h = TYPES[b.type].shape === 'v2' ? 2 : 1;
+  s.position.set(p.x, p.y + h*LV + .12, p.z); s.scale.set(.86,.3,1); s.renderOrder = 10; return s;
+}
+function rebuildOverlay(ev){
+  while(overlayGroup.children.length){ const o = overlayGroup.children.pop(); if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); }
+  markView = []; colMeshes = [];
+  const showMarks = tool === 'post' || tool === 'erase';
+  for(const s of ev.segs){
+    const r = s.cap ? s.load/s.cap : (s.load ? 9 : 0), over = s.load > s.cap, col = over ? 0xd8382c : r >= .75 ? 0xf4c430 : 0x5fbf72;
+    const y0 = s.lv < 0 ? roofY : roofY + s.lv*LV, pos = new THREE.Vector3(s.cx, s.lv < 0 ? roofY + .1 : y0 + .5, s.cz);
+    let m;
+    if(s.lv < 0){ m = new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.08,12), new THREE.MeshBasicMaterial({color:s.load ? col : 0xe9e4d8})); m.position.set(s.cx, roofY+.05, s.cz); }
+    else { m = new THREE.Mesh(new THREE.BoxGeometry(.075,.92,.075), new THREE.MeshBasicMaterial({color:col})); m.position.set(s.cx, y0+.46, s.cz); }
+    m.userData = {seg:s, over}; overlayGroup.add(m); colMeshes.push(m);
+    for(let p = 0; p < s.posts; p++){ const pm = new THREE.Mesh(new THREE.BoxGeometry(.13, s.lv < 0 ? .46 : .92, .13), new THREE.MeshLambertMaterial({color:0xf4c430})); pm.position.set(s.cx + (p%2 ? .11 : -.11), s.lv < 0 ? roofY - .2 : y0 + .46, s.cz + (p%2 ? -.11 : .11)); overlayGroup.add(pm); }
+    markView.push({s, pos});
+    if(showMarks && (tool === 'post' || s.posts)){ const mk = new THREE.Mesh(new THREE.SphereGeometry(.15,12,8), new THREE.MeshBasicMaterial({color:tool === 'post' ? 0xf4c430 : 0xff6a5a, transparent:true, opacity:.92, depthTest:false})); mk.position.copy(pos); mk.renderOrder = 6; mk.userData.mark = true; overlayGroup.add(mk); }
+  }
+}
+
+// --- 鏡頭：固定等角，依關卡大小自動取景 ---
+const stageSlot = $('stageSlot'), heroSlot = $('heroSlot');
+let slot = heroSlot, lastW = 0, lastH = 0;
+function fitCamera(){
+  const w = slot.clientWidth || 360, h = slot.clientHeight || 400; if(w !== lastW || h !== lastH){ renderer.setSize(w, h, false); lastW = w; lastH = h; }
+  if(!L) return;
+  const yaw = mode === 'menu' ? menuYaw : ISO;
+  const dir = new THREE.Vector3(Math.cos(yaw)*Math.cos(PITCH), Math.sin(PITCH), Math.sin(yaw)*Math.cos(PITCH));
+  const bmin = new THREE.Vector3(-1.7, mode === 'menu' ? -.5 : 0, -1.7), bmax = new THREE.Vector3(L.W + 1, roofY + L.top*LV + .3, L.D + 1);
+  const c = bmin.clone().add(bmax).multiplyScalar(.5);
+  cam.position.copy(c).addScaledVector(dir, 80); cam.up.set(0,1,0); cam.lookAt(c); cam.updateMatrixWorld();
+  const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+  let r0 = 1e9, r1 = -1e9, u0 = 1e9, u1 = -1e9;
+  if(mode === 'menu'){ const rad = bmax.clone().sub(bmin).length()/2*.82; r0 = u0 = -rad; r1 = u1 = rad; }
+  else {
+    const yT = roofY + L.top*LV, pts = [];
+    for(const x of [-1.7, L.W + .7]) for(const z of [-1.7, L.D + .7]) pts.push([x, x < 0 && z < 0 ? -.6 : 0, z]);
+    for(let x = 0; x < L.W; x++) for(let z = 0; z < L.D; z++) if(Rules.inside(L, x, z)){ const y = roofY + Math.min(L.top, Rules.hmax(L, x, z))*LV + .3; pts.push([x, y, z], [x+1, y, z], [x, y, z+1], [x+1, y, z+1]); }
+    if(L.inv.balc) for(const q of [[-1,0],[-1,L.D],[L.W+1,0],[L.W+1,L.D],[0,-1],[L.W,-1],[0,L.D+1],[L.W,L.D+1]]) pts.push([q[0], yT - .4, q[1]]);
+    for(const q of pts){ const v = new THREE.Vector3(q[0],q[1],q[2]).sub(c), r = v.dot(right), u = v.dot(up); r0 = Math.min(r0,r); r1 = Math.max(r1,r); u0 = Math.min(u0,u); u1 = Math.max(u1,u); }
+  }
+  const padT = 5, padB = 5, padS = 2;
+  const scale = Math.min((w - padS*2)/(r1 - r0), (h - padT - padB)/(u1 - u0));
+  const cx = (r0 + r1)/2, cy = (u0 + u1)/2, offY = (padT - padB)/2/scale;
+  cam.left = cx - w/2/scale; cam.right = cx + w/2/scale; cam.top = cy + h/2/scale + offY; cam.bottom = cy - h/2/scale + offY; cam.updateProjectionMatrix();
+  sun.position.set(c.x - 5, c.y + 14, c.z - 9); sun.target.position.copy(c);
+}
+new ResizeObserver(() => { fitCamera(); drawLabels(); }).observe(stageSlot); new ResizeObserver(() => fitCamera()).observe(heroSlot);
+function screenOf(v){ const p = v.clone().project(cam); return {x:(p.x+1)/2*slot.clientWidth, y:(1-p.y)/2*slot.clientHeight}; }
+
+// ===== 觸控 =====
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+function pickAt(cx, cy){
+  const r = cvs.getBoundingClientRect(), px = cx - r.left, py = cy - r.top;
+  if(tool === 'post' || tool === 'erase'){
+    let bd = 36, bs = null;
+    for(const v of markView){ if(tool === 'erase' && !v.s.posts) continue; const p = screenOf(v.pos), d = Math.hypot(p.x - px, p.y - py); if(d < bd){ bd = d; bs = v.s; } }
+    if(bs && (tool === 'post' || bd < 24)) return {kind:'seg', seg:bs};
+    if(tool === 'post') return null;
+  }
+  ptr.set(px/r.width*2 - 1, -(py/r.height)*2 + 1); ray.setFromCamera(ptr, cam);
+  const hits = ray.intersectObjects(blockGroup.children.concat(tiles), true), cands = [], seen = new Set();
+  const push = c => { const k = c.kind + c.x + ',' + c.z + ',' + (c.lv === undefined ? '' : c.lv); if(!seen.has(k)){ seen.add(k); cands.push(c); } };
+  for(const h of hits){
+    if(h.object.userData.tile){ push({kind:'cell', x:h.object.userData.x, z:h.object.userData.z}); continue; }
+    const b = st.blocks.find(q => q.id === h.object.userData.bid); if(!b || !h.face) continue;
+    if(tool === 'erase') return {kind:'block', b};
+    const n = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+    const ix = Math.floor(h.point.x - n.x*.02), iz = Math.floor(h.point.z - n.z*.02);
+    if(n.y > .5) push(TYPES[b.type].hang ? {kind:'cell', x:b.x, z:b.z} : {kind:'cell', x:ix, z:iz});
+    else if(Math.abs(n.y) < .5){
+      const dx = Math.round(n.x), dz = Math.round(n.z); if(Math.abs(dx) + Math.abs(dz) !== 1) continue;
+      const lv = Math.max(0, Math.min(L.top-1, Math.floor((h.point.y - roofY)/LV)));
+      if(tool === 'balc') push({kind:'balc', x:ix+dx, z:iz+dz, lv});
+      else push(Rules.inside(L, ix+dx, iz+dz) ? {kind:'cell', x:ix+dx, z:iz+dz} : {kind:'cell', x:ix, z:iz});
+    }
+  }
+  // 手指點到的地方可能疊著好幾格：選第一個「真的能蓋」的
+  for(const c of cands){ const pr = proposal(c); if(pr && pr.p && !pr.why) return c; }
+  return cands[0] || null;
+}
+function proposal(h){
+  if(!h || !TYPES[tool]) return null;
+  if(tool === 'balc'){
+    if(h.kind !== 'balc') return {p:null, why:'陽台要掛在房間「朝外的那一面」：點房間的側面，或用平面圖點外圈的格子'};
+    const p = {type:'balc', x:h.x, z:h.z, lv:h.lv, rot:0}; return {p, why:Rules.canPlace(L, st.blocks, st.inv, p)};
+  }
+  if(h.kind !== 'cell') return null;
+  const p = {type:tool, x:h.x, z:h.z, lv:Rules.colHeight(Rules.occMap(st.blocks), h.x, h.z), rot:TYPES[tool].shape === 'h2' ? rot : 0};
+  return {p, why:Rules.canPlace(L, st.blocks, st.inv, p)};
+}
+const hkey = h => !h ? '' : h.kind + ':' + (h.kind === 'seg' ? h.seg.key : h.kind === 'block' ? h.b.id : h.x + ',' + h.z + ',' + (h.lv === undefined ? '' : h.lv)) + ':' + tool + rot;
+function setHover(h, force){
+  const k = hkey(h); if(k === hoverKey && !force) return; hoverKey = k; hover = h; prop = null; after = null;
+  if(h && TYPES[tool]){ prop = proposal(h); if(prop && prop.p && !prop.why) after = Rules.evaluate(L, st.blocks.concat([Object.assign({}, prop.p, {id:'ghost'})]), st.posts); }
+  updateGhost(); updateTip(); updateDelta(); drawLabels(); updatePlanDots(); markPlan();
+}
+function clearGroup(grp){ while(grp.children.length){ const o = grp.children.pop(); disposeGroup(o); } }
+function updateGhost(){
+  clearGroup(ghostGroup);
+  const hl = (x, y, z, sx, sz, col) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(sx - .04, sz - .04), new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:.5, depthTest:false})); m.rotation.x = -Math.PI/2; m.position.set(x, y + .03, z); m.renderOrder = 4; ghostGroup.add(m); };
+  if(prop && prop.p){
+    const bad = !!prop.why, g = blockMesh(prop.p, true); g.position.copy(wpos(prop.p)); g.userData.ghost = true;
+    for(const m of g.userData.mats){ if(bad) m.color.set(0xff4d4d); m.depthTest = false; } g.traverse(o => { o.renderOrder = 5; });
+    ghostGroup.add(g); hl(g.position.x, g.position.y, g.position.z, g.userData.sx, g.userData.sz, bad ? 0xff4d4d : 0x7dff9b);
+  } else if(hover && hover.kind === 'cell' && TYPES[tool] && tool !== 'balc'){ hl(hover.x + .5, roofY, hover.z + .5, 1, 1, 0xff4d4d); }
+  if(hover && hover.kind === 'block' && tool === 'erase'){ const g = blockMesh(hover.b, true); g.position.copy(wpos(hover.b)); g.scale.setScalar(1.05); for(const m of g.userData.mats){ m.color.set(0xff4d4d); m.depthTest = false; } ghostGroup.add(g); }
+  if(hover && hover.kind === 'seg'){ const s = hover.seg, m = new THREE.Mesh(new THREE.SphereGeometry(.24,12,8), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.75, depthTest:false})); m.position.set(s.cx, s.lv < 0 ? roofY + .1 : roofY + s.lv*LV + .5, s.cz); m.renderOrder = 7; ghostGroup.add(m); }
+}
+const segText = s => `${s.lv < 0 ? '原有柱子' : `頂加 ${s.lv+1} 層的角柱`}：負重 ${s.load}／承重 ${s.cap}${s.posts ? `（含鋼柱 ×${s.posts}）` : ''}`;
+const worstOf = ev => ev.segs.reduce((m, s) => (s.load > 0 && (!m || s.load/Math.max(.01,s.cap) > m.load/Math.max(.01,m.cap))) ? s : m, null);
+const tipEl = $('tip'); let tipHold = 0;
+function toolTip(){
+  if(tool === 'post') return `<b>鋼柱補強</b>　點角柱上的黃色圓點，那一段承重 +${Rules.POST}`;
+  if(tool === 'erase') return '<b>拆除</b>　點要拆的方塊（上面要先清空），或點紅色圓點拆鋼柱';
+  const T = TYPES[tool]; return `<b>${T.name}</b>　重 ${T.w.reduce((a,b) => a+b, 0)}${T.cap ? `・柱 ${T.cap}` : ''}・租 ${T.rent}${T.perLv ? `＋每層 ${T.perLv}` : T.room ? '＋每層 1' : ''}　${T.desc}`;
+}
+function updateTip(){
+  if(busy) return;
+  if(!hover){ if(performance.now() < tipHold) return; tipEl.classList.remove('bad'); tipEl.innerHTML = toolTip(); return; }
+  tipEl.classList.remove('bad'); tipHold = 0;
+  if(hover.kind === 'seg'){ tipEl.innerHTML = segText(hover.seg); return; }
+  if(hover.kind === 'block'){ const why = Rules.canRemove(L, st.blocks, hover.b); tipEl.innerHTML = why ? `<span class="w">${why}</span>` : `放開就拆掉<b>${TYPES[hover.b.type].name}</b>`; return; }
+  if(!prop){ tipEl.innerHTML = toolTip(); return; }
+  if(!prop.p || prop.why){ tipEl.innerHTML = `<span class="w">${esc(prop.why)}</span>`; return; }
+  const a = lastEval, b = after, wa = worstOf(b), warn = [];
+  if(b.over.length > a.over.length) warn.push('柱子會超載');
+  if(b.lost.length > a.lost.length) warn.push('走不到樓梯');
+  if(b.dark.length > a.dark.length) warn.push('會出現暗房');
+  if(b.weak.length > a.weak.length) warn.push('陽台壓不住');
+  if(b.centroid && !b.centroid.ok) warn.push('重心偏出框外');
+  tipEl.innerHTML = `<b>${TYPES[tool].name}</b>・頂加 ${prop.p.lv+1} 層　租金 ${a.rent}→<b>${b.rent}</b>${wa ? `　最吃緊 ${wa.load}/${wa.cap}` : ''}${warn.length ? `　<span class="w">⚠ ${warn.join('、')}</span>` : ''}`;
+}
+function flashTip(msg){ tipHold = performance.now() + 2200; tipEl.innerHTML = `<span class="w">${esc(msg)}</span>`; tipEl.classList.remove('bad'); void tipEl.offsetWidth; tipEl.classList.add('bad'); }
+function fail(msg){ flashTip(msg); SFX.bad(); buzz([20,40,20]); const g = ghostGroup.children.find(o => o.userData.ghost); if(g){ const x = g.position.x; tween(240, k => { g.position.x = x + Math.sin(k*Math.PI*6)*.06*(1-k); }); } }
+function updateDelta(){ const el = $('gDelta'); if(after && lastEval){ const d = after.rent - lastEval.rent; el.textContent = (d >= 0 ? '+' : '') + d; el.className = 'delta ' + (d >= 0 ? 'p' : 'm'); } else el.textContent = ''; }
+
+let down = false;
+cvs.addEventListener('pointerdown', e => { if(mode !== 'game' || busy) return; SFX.unlock(); down = true; try{ cvs.setPointerCapture(e.pointerId); }catch(_){} setHover(pickAt(e.clientX, e.clientY)); e.preventDefault(); });
+cvs.addEventListener('pointermove', e => { if(mode !== 'game' || busy) return; if(down || e.pointerType === 'mouse') setHover(pickAt(e.clientX, e.clientY)); });
+cvs.addEventListener('pointerup', e => { if(!down) return; down = false; if(mode !== 'game' || busy) return; const h = pickAt(e.clientX, e.clientY); setHover(h); act(h); if(e.pointerType !== 'mouse') setTimeout(() => { if(!down) setHover(null); }, 60); });
+cvs.addEventListener('pointercancel', () => { down = false; setHover(null); });
+cvs.addEventListener('pointerleave', e => { if(e.pointerType === 'mouse' && !down) setHover(null); });
+cvs.addEventListener('contextmenu', e => e.preventDefault());
+
+// ===== 操作 =====
+function snapshot(){ hist.push(JSON.stringify(st)); if(hist.length > 300) hist.shift(); }
+function popText(text, v, cls){ const p = screenOf(v), el = document.createElement('span'); el.className = 'pop ' + (cls || ''); el.textContent = text; el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; $('fx').appendChild(el); el.addEventListener('animationend', () => el.remove()); }
+function flashSegs(before){
+  const old = new Map(before.segs.map(s => [s.key, s.load])); flashKeys = new Set(lastEval.segs.filter(s => (old.get(s.key) || 0) !== s.load).map(s => s.key));
+  clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashKeys = new Set(); updatePlanDots(); }, 1800); updatePlanDots();
+}
+function act(h){
+  if(!h) return;
+  const before = lastEval;
+  if(tool === 'post'){
+    if(h.kind !== 'seg') return fail('點角柱上的黃色圓點加裝鋼柱');
+    if(st.inv.post <= 0) return fail('鋼柱用完了');
+    snapshot(); st.posts[h.seg.key] = (st.posts[h.seg.key] || 0) + 1; st.inv.post--; SFX.post(); buzz(12); refresh(); flashSegs(before);
+    popText('承重 +' + Rules.POST, new THREE.Vector3(h.seg.cx, h.seg.lv < 0 ? roofY + .3 : roofY + h.seg.lv + .7, h.seg.cz), 'plus'); return;
+  }
+  if(tool === 'erase'){
+    if(h.kind === 'seg'){ if(!st.posts[h.seg.key]) return; snapshot(); st.posts[h.seg.key]--; if(!st.posts[h.seg.key]) delete st.posts[h.seg.key]; st.inv.post++; SFX.remove(); refresh(); flashSegs(before); return; }
+    if(h.kind !== 'block') return;
+    const why = Rules.canRemove(L, st.blocks, h.b); if(why) return fail(why);
+    snapshot(); st.blocks = st.blocks.filter(o => o.id !== h.b.id); st.inv[h.b.type]++; prunePosts(); SFX.remove(); buzz(10); refresh(); flashSegs(before);
+    const d = lastEval.rent - before.rent; if(d) popText((d > 0 ? '+' : '') + d, wpos(h.b).add(new THREE.Vector3(0,.8,0)), d > 0 ? 'plus' : 'minus'); return;
+  }
+  const pr = proposal(h); if(!pr) return; if(!pr.p || pr.why) return fail(pr.why);
+  snapshot(); const nb = Object.assign({}, pr.p, {id:'b'+(nid++)}); st.blocks.push(nb); st.inv[tool]--; justPlaced = nb.id;
+  const T = TYPES[tool]; SFX.place(T.w.reduce((a,b) => a+b, 0)); setTimeout(() => buzz(T.w[0] >= 8 ? 28 : 14), 200);
+  if(st.inv[tool] <= 0){ const nx = toolsOf().find(k => TYPES[k] && st.inv[k] > 0); if(nx) tool = nx; }
+  refresh(); flashSegs(before);
+  const d = lastEval.rent - before.rent; setTimeout(() => popText((d >= 0 ? '+' : '') + d, wpos(nb).add(new THREE.Vector3(0, (T.shape === 'v2' ? 2 : 1) + .2, 0)), d > 0 ? 'plus' : d < 0 ? 'minus' : ''), 200);
+}
+function prunePosts(){ const valid = new Set(Rules.segments(L, st.blocks, {}).map(s => s.key)); for(const k of Object.keys(st.posts)) if(!valid.has(k)){ st.inv.post += st.posts[k]; delete st.posts[k]; } }
+function undo(){ if(busy) return; if(!hist.length) return flashTip('沒有可以復原的步驟'); st = JSON.parse(hist.pop()); SFX.remove(); refresh(); }
+function resetAll(){ snapshot(); const h = hist; st = newState(L); hist = h; SFX.remove(); refresh(); }
+function refresh(){
+  lastEval = Rules.evaluate(L, st.blocks, st.posts);
+  syncBlocks(lastEval); rebuildOverlay(lastEval); renderHUD(); renderChips(); renderDock(); renderPlan();
+  hoverKey = null; setHover(null, true);
+}
+const toolsOf = () => ORDER.filter(k => (L.inv[k] || 0) > 0);
+function selectTool(k){ tool = k; SFX.select(); renderDock(); rebuildOverlay(lastEval); setHover(null, true); renderPlan(); }
+
+// ===== 驗收 =====
+async function verify(){
+  if(busy || mode !== 'game') return;
+  busy = true; setHover(null, true); $('bCheck').disabled = true;
+  const ev = Rules.evaluate(L, st.blocks, st.posts);
+  const steps = [['load','承重'],['egress','逃生'],['weight','配重'],['light','採光']]; if(L.ecc) steps.push(['quake','耐震']);
+  chipState = {}; tipEl.classList.remove('bad'); tipEl.innerHTML = '結構技師正在檢查……'; $('labels').innerHTML = '';
+  let failed = null;
+  for(const [k, name] of steps){
+    chipState[k] = 'run'; renderChips(); SFX.tick();
+    const bad = k === 'load' ? ev.over.length : k === 'egress' ? ev.lost.length : k === 'weight' ? ev.weak.length : k === 'quake' ? !ev.centroid.ok : 0;
+    if(k === 'egress'){ fx.egDist = new Map(); for(const [b, d] of ev.dist) fx.egDist.set(b.id, d); }
+    if(k === 'quake') fx.quakeAmp = bad ? .05 : .012;
+    const skip = k === 'weight' && !st.blocks.some(b => b.type === 'balc');
+    fx[k] = performance.now(); await sleep(skip ? 120 : k === 'egress' ? 580 : k === 'quake' ? 760 : k === 'weight' ? 320 : 380); fx[k] = 0;
+    if(k === 'weight') for(const [, m] of meshes) if(m.userData.status && m.userData.status.type === 'balc') m.position.y = m.userData.status.home.y;
+    if(bad){ chipState[k] = 'bad'; renderChips(); failed = k; break; }
+    chipState[k] = 'pass'; renderChips(); SFX.ok(); await sleep(110);
+  }
+  world.rotation.z = 0;
+  if(failed) await failStep(failed, ev);
+  chipState = null; busy = false; $('bCheck').disabled = false; renderChips(); updateTip();
+  if(failed) return;
+  if(ev.rent < L.stars[0]){ SFX.fail(); modal('結構沒問題，但租金不夠', `<p class="c">現在租金 <b>${ev.rent}</b>，至少要 <b>${L.stars[0]}</b> 才算過關。${ev.dark.length ? `<br>有 ${ev.dark.length} 間暗房收不到租金。` : ''}</p>`, [['繼續蓋', closeModal, 1]]); return; }
+  win(ev.rent);
+}
+async function failStep(k, ev){
+  if(k === 'load'){
+    const worst = ev.over.slice().sort((a,b) => (b.load - b.cap) - (a.load - a.cap))[0];
+    const falling = new Set(st.blocks.filter(b => !b.locked && !TYPES[b.type].hang && Rules.cells(b).some(c => c.lv >= Math.max(0, worst.lv) && Rules.corners(c.x,c.z).some(q => q[0] === worst.cx && q[1] === worst.cz))));
+    let grew = true; const occ = Rules.occMap(st.blocks);
+    while(grew){ grew = false; for(const b of st.blocks){ if(falling.has(b) || b.locked) continue; const hang = TYPES[b.type].hang; let dep = false; if(hang){ const an = Rules.anchorOf(L, b, occ); dep = an && falling.has(an.a); } else dep = Rules.cells(b).some(c => { const o = occ.get(Rules.k3(c.x,c.z,c.lv-1)); return o && o.b !== b && falling.has(o.b); }); if(dep){ falling.add(b); grew = true; } } }
+    await dropBlocks([...falling], true);
+    modal('塌了', `<p class="c">${segText(worst)}，超載了。</p><p class="c">結構技師：「重量總要有地方去。它選擇了地心。」</p>`, [['回去修改', closeModal, 1]]);
+  } else if(k === 'egress'){ SFX.fail(); buzz([30,50,30]); await sleep(500); modal('消防局說不行', `<p class="c">有 <b>${ev.lost.length}</b> 間房走不到樓梯（紅色標示）。</p><p class="c">消防隊員：「失火的時候，住在這裡的人要怎麼下來？用飛的嗎？」</p>`, [['回去修改', closeModal, 1]]); }
+  else if(k === 'weight'){ await dropBlocks(ev.weak.map(w => w.b), false); modal('陽台掉下去了', `<p class="c">有 <b>${ev.weak.length}</b> 個陽台配重不夠：它貼著的那間房（含上面樓層）總重要 ≥ ${Rules.BALC_NEED}。</p>`, [['回去修改', closeModal, 1]]); }
+  else if(k === 'quake'){ SFX.fail(); await sleep(200); modal('地震時會扭轉', `<p class="c">加蓋的重心偏離屋頂中心太遠了。打開<b>平面圖</b>，把十字移回虛線框裡：在另一側加重量，或把偏的那側減輕。</p>`, [['回去修改', closeModal, 1]]); }
+}
+async function dropBlocks(list, big){
+  const ms = list.map(b => meshes.get(b.id)).filter(Boolean), vel = ms.map(() => ({x:(Math.random()-.5)*.05, y:.03, z:(Math.random()-.5)*.05, r:new THREE.Vector3((Math.random()-.5)*.1, (Math.random()-.5)*.1, (Math.random()-.5)*.1)}));
+  overlayGroup.visible = statusGroup.visible = false;
+  if(big){ SFX.collapse(); buzz([60,30,120]); shakeT = performance.now() + 700; for(const m of ms) puff(m.position, 5, 0xcfc6b8); } else { SFX.fail(); buzz(40); }
+  await new Promise(res => tween(1300, () => { ms.forEach((m, i) => { const v = vel[i]; v.y -= .011; m.position.x += v.x; m.position.y += v.y; m.position.z += v.z; m.rotation.x += v.r.x; m.rotation.y += v.r.y; m.rotation.z += v.r.z; }); }, res));
+  overlayGroup.visible = statusGroup.visible = true; drawLabels();
+  for(const m of ms){ m.position.copy(m.userData.status.home); m.rotation.set(0,0,0); m.scale.set(.01,.01,.01); tween(220, k => m.scale.setScalar(Math.max(.01, eOut(k))), () => m.scale.set(1,1,1)); }
+}
+let confetti = [];
+function win(r){
+  const s = r >= L.stars[2] ? 3 : r >= L.stars[1] ? 2 : 1, prev = stars[L.id] || 0;
+  if(s > prev){ stars[L.id] = s; store.set('wj3d3-stars', stars); }
+  for(let i = 0; i < 70; i++){ const m = new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.03), new THREE.MeshBasicMaterial({color:[0xf4c430,0xd8382c,0x3e78b2,0x3f9b57,0xffffff][i%5]})); m.position.set(L.W/2, roofY + L.top + .5, L.D/2); fxGroup.add(m); confetti.push({m, v:new THREE.Vector3((Math.random()-.5)*.22, Math.random()*.2+.06, (Math.random()-.5)*.22), life:150}); }
+  buzz([20,40,20,40,60]);
+  const beat = r > L.stars[2] ? '<p class="c"><b>你超越了設計者找到的最高租金！</b></p>' : '';
+  const quip = s === 3 ? (L.win3 || '結構技師：「……我無話可說。這是完美的違建。」') : s === 2 ? '結構技師：「可以，但還能再擠一點。」' : '結構技師：「勉強及格。陳阿姨在看。」';
+  const next = li + 1 < LEVELS.length;
+  modal(s === 3 ? '完美違建' : '驗收通過', `<div class="big"><span>★</span><span>★</span><span>★</span></div><p class="c">租金 <b>${r}</b>　三星門檻 ${L.stars[2]}</p>${beat}<p class="c">${quip}</p>`,
+    [[s < 3 ? '再挑戰' : '留在這關', closeModal], next ? ['下一關', () => { closeModal(); startLevel(li+1); }, 1] : ['回選關', () => { closeModal(); showMenu(); }, 1]]);
+  const els = [...document.querySelectorAll('#mB .big span')];
+  for(let i = 0; i < s; i++) setTimeout(() => { if(els[i]){ els[i].classList.add('lit'); SFX.star(i); buzz(15); } }, 350 + i*330);
+}
+
+// ===== 介面 =====
+let rentShown = 0;
+function renderHUD(){
+  const r = lastEval.rent, el = $('gRent');
+  if(r !== rentShown){ const from = rentShown; rentShown = r; tween(260, k => { el.textContent = Math.round(from + (r - from)*eOut(k)); }, () => { el.textContent = r; }); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); } else el.textContent = r;
+  const max = L.stars[2]*1.08;
+  $('gBar').innerHTML = `<i style="width:${Math.min(100, r/max*100)}%"></i>` + L.stars.map(v => `<b class="${r >= v ? 'hit' : ''}" style="left:${v/max*100}%"></b>`).join('');
+  $('gGoal').innerHTML = L.stars.map((v, i) => `<span class="${r >= v ? 'hit' : ''}">${'★'.repeat(i+1)}${v}</span>`).join('');
+}
+function chipInfo(){
+  const ev = lastEval, w = worstOf(ev), hasB = st.blocks.some(b => b.type === 'balc');
+  const rows = [
+    ['load','承重', ev.over.length ? 'bad' : 'ok', ev.over.length ? `${ev.over.length} 段柱子超載（紅色）` : `所有柱子都撐得住${w ? `，最吃緊 ${w.load}/${w.cap}` : ''}`],
+    ['egress','逃生', ev.lost.length ? 'bad' : 'ok', ev.lost.length ? `${ev.lost.length} 間房走不到樓梯` : '每間房都走得到樓梯'],
+    ['weight','配重', ev.weak.length ? 'bad' : 'ok', ev.weak.length ? `${ev.weak.length} 個陽台壓不住` : hasB ? '陽台都壓得住' : '目前沒有陽台'],
+    ['light','採光', ev.dark.length ? 'warn' : 'ok', ev.dark.length ? `${ev.dark.length} 間暗房，租金 0（不影響過關）` : '每間房都有窗'],
+  ];
+  if(ev.centroid) rows.push(['quake','耐震', ev.centroid.ok ? 'ok' : 'bad', ev.centroid.ok ? '重心在虛線框內' : '重心偏出框外，打開平面圖看十字的位置']);
+  return rows;
+}
+function renderChips(){
+  const box = $('chips');
+  box.innerHTML = chipInfo().map(([k, name, s]) => { const c = chipState ? (chipState[k] || 'idle') : s; return `<button class="chip ${c}" data-k="${k}">${name}<i>${c === 'run' ? '…' : c === 'bad' ? '✗' : c === 'warn' ? '!' : c === 'idle' ? '・' : '✓'}</i></button>`; }).join('');
+  box.querySelectorAll('.chip').forEach(el => el.onclick = () => { if(busy) return; const row = chipInfo().find(q => q[0] === el.dataset.k); SFX.click(); tipEl.classList.remove('bad'); tipEl.innerHTML = `<b>${row[1]}</b>　${row[3]}`; });
+}
+const ICON = {};
+function makeIcons(){
+  const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffffff, 0x8a7a66, .95)); const d = new THREE.DirectionalLight(0xffffff, .7); d.position.set(-3,6,-5); sc.add(d);
+  const c = new THREE.OrthographicCamera(-1,1,1,-1,-20,60), dir = new THREE.Vector3(Math.cos(ISO)*Math.cos(PITCH), Math.sin(PITCH), Math.sin(ISO)*Math.cos(PITCH));
+  renderer.setSize(128, 128, false); lastW = lastH = 0;
+  for(const k of ORDER){ if(!TYPES[k]) continue; const m = blockMesh({type:k, x:0, z:0, lv:0, rot:0}, false); sc.add(m);
+    const box = new THREE.Box3().setFromObject(m), ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()), r = Math.max((size.x + size.z)*.707, (size.x + size.z)*.44 + size.y*.79)*.5 + .06;
+    c.left = -r; c.right = r; c.top = r; c.bottom = -r; c.updateProjectionMatrix(); c.position.copy(ctr).addScaledVector(dir, 20); c.lookAt(ctr);
+    renderer.clear(); renderer.render(sc, c); ICON[k] = cvs.toDataURL(); sc.remove(m); disposeGroup(m); }
+  const mk = draw => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; draw(cv.getContext('2d')); return cv.toDataURL(); };
+  ICON.post = mk(g => { g.fillStyle = '#f4c430'; g.fillRect(25,6,14,52); g.fillStyle = '#1f1c18'; for(let y = 6; y < 58; y += 10) g.fillRect(25,y,14,4); g.fillStyle = '#9a7a10'; g.fillRect(36,6,3,52); });
+  ICON.erase = mk(g => { g.strokeStyle = '#d8382c'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(16,16); g.lineTo(48,48); g.moveTo(48,16); g.lineTo(16,48); g.stroke(); });
+}
+let lastCounts = {};
+function renderDock(){
+  const keys = toolsOf(), dock = $('dock');
+  const html = keys.concat(['erase']).map(k => {
+    if(k === 'erase') return `<button class="piece er${tool === k ? ' on' : ''}" data-k="erase"><img src="${ICON.erase}" alt=""><span class="nm">拆除</span><span class="sp">點方塊</span></button>`;
+    const T = TYPES[k], n = st.inv[k], sp = k === 'post' ? `承重 +${Rules.POST}` : `重${T.w.reduce((a,b) => a+b, 0)}${T.cap ? ' 柱' + T.cap : ''} 租${T.rent}`;
+    return `<button class="piece${tool === k ? ' on' : ''}${n <= 0 ? ' zero' : ''}" data-k="${k}"><img src="${ICON[k]}" alt=""><span class="nm">${k === 'post' ? '鋼柱' : T.name}</span><span class="sp">${sp}</span><span class="ct${lastCounts[k] !== undefined && lastCounts[k] !== n ? ' bump' : ''}">×${n}</span></button>`;
+  }).join('');
+  dock.innerHTML = html;
+  for(const k of keys) lastCounts[k] = st.inv[k];
+  dock.querySelectorAll('.piece').forEach(bt => bt.onclick = () => selectTool(bt.dataset.k));
+  const on = dock.querySelector('.piece.on'); if(on && on.scrollIntoView) { const dr = dock.getBoundingClientRect(), r = on.getBoundingClientRect(); if(r.left < dr.left || r.right > dr.right) dock.scrollLeft += r.left - dr.left - 20; }
+  $('bRot').style.display = tool === 'box' ? 'block' : 'none';
+  $('bXray').classList.toggle('on', xray); $('bLab').classList.toggle('on', showLabels);
+}
+// --- 平面圖（旋轉 45 度，方向和 3D 畫面一致） ---
+let planGeo = null;
+function renderPlan(){
+  const ring = (L.inv.balc || 0) > 0, x0 = ring ? -1 : 0, x1 = ring ? L.W : L.W - 1, z0 = ring ? -1 : 0, z1 = ring ? L.D : L.D - 1;
+  const box = $('planBox'), cols = z1 - z0 + 1, rows = x1 - x0 + 1, avail = Math.min(box.clientWidth, box.clientHeight) - 30, s = Math.max(14, Math.min(64, Math.floor(avail*1.414/(cols + rows))));
+  planGeo = {x1, z0, s, ds:Math.round(Math.max(12, Math.min(20, s*.46)))};
+  const occ = Rules.occMap(st.blocks), diag = (cols + rows)*s/1.414;
+  let html = `<div class="pgrid" style="grid-template-columns:repeat(${cols},${s}px);grid-auto-rows:${s}px;width:${cols*s}px;height:${rows*s}px;font-size:${Math.round(Math.max(10, Math.min(15, s*.42)))}px">`;
+  for(let x = x1; x >= x0; x--) for(let z = z0; z <= z1; z++){
+    const ins = Rules.inside(L, x, z), isVoid = Rules.isVoid(L, x, z);
+    let cls = 'pc', txt = '';
+    if(ins){ const h = Rules.colHeight(occ, x, z); if(h){ const top = occ.get(Rules.k3(x, z, h-1)).b; cls += ' t-' + top.type; txt = h; } if(Rules.hmax(L, x, z) < L.top) cls += ' sb'; }
+    else { const n = st.blocks.filter(b => b.type === 'balc' && b.x === x && b.z === z).length; cls += isVoid ? ' void' : ' ring'; if(n){ cls += ' t-balc'; txt = n; } }
+    html += `<button class="${cls}" data-x="${x}" data-z="${z}" aria-label="格子 ${x},${z}"><span>${txt}</span></button>`;
+  }
+  html += '<div class="dots"></div></div>';
+  const plan = $('plan'); plan.style.width = diag + 'px'; plan.style.height = diag + 'px'; plan.innerHTML = html;
+  updatePlanDots(); markPlan();
+}
+// 圓點＝這根柱子最吃緊的一段還能扛多少；預覽時顯示蓋下去之後的數字
+function updatePlanDots(){
+  const layer = document.querySelector('#plan .dots'); if(!layer || !planGeo || !lastEval || mode !== 'game') return;
+  const {x1, z0, s, ds} = planGeo, ev = after || lastEval, cur = new Map(), nxt = new Map();
+  const agg = (segs, m) => { for(const sg of segs){ const k = sg.cx + ',' + sg.cz, rem = sg.cap - sg.load, c = m.get(k); if(!c || rem < c.rem) m.set(k, {rem, r:sg.cap ? sg.load/sg.cap : (sg.load ? 9 : 0), cx:sg.cx, cz:sg.cz}); } };
+  agg(lastEval.segs, cur); agg(ev.segs, nxt);
+  const fl = new Set([...flashKeys].map(k => k.split(',').slice(0,2).join(',')));
+  let html = '';
+  for(const [k, c] of nxt){ const o = cur.get(k), up = (after && (!o || o.rem !== c.rem)) || fl.has(k);
+    html += `<div class="dot ${c.rem < 0 ? 'r' : c.r >= .75 ? 'y' : 'g'}${up ? ' up' : ''}" style="left:${(c.cz - z0)*s}px;top:${(x1 + 1 - c.cx)*s}px;width:${ds}px;height:${ds}px;margin:${-ds/2}px 0 0 ${-ds/2}px"><span style="font-size:${ds < 16 ? 9 : 11}px">${c.rem}</span></div>`; }
+  const c = ev.centroid;
+  if(c) html += `<div class="ecc${c.ok ? '' : ' bad'}" style="left:${(L.D/2 - c.tol - z0)*s}px;top:${(x1 + 1 - L.W/2 - c.tol)*s}px;width:${c.tol*2*s}px;height:${c.tol*2*s}px"></div><div class="com${c.ok ? '' : ' bad'}" style="left:${(c.z - z0)*s}px;top:${(x1 + 1 - c.x)*s}px"></div>`;
+  layer.innerHTML = html;
+}
+function markPlan(){ const plan = $('plan'); plan.querySelectorAll('.hov').forEach(e => e.classList.remove('hov')); if(!hover || hover.x === undefined) return; const cellsH = prop && prop.p ? Rules.cells(prop.p) : [{x:hover.x, z:hover.z}]; for(const c of cellsH){ const el = plan.querySelector(`.pc[data-x="${c.x}"][data-z="${c.z}"]`); if(el) el.classList.add('hov'); } }
+function planHover(x, z){
+  if(tool === 'post') return null;
+  if(tool === 'erase'){ const col = st.blocks.filter(b => Rules.cells(b).some(c => c.x === x && c.z === z)).sort((a, b) => Math.max(...Rules.cells(b).map(c => c.lv)) - Math.max(...Rules.cells(a).map(c => c.lv))); return col.length ? {kind:'block', b:col[0], x, z} : null; }
+  if(tool === 'balc'){ let lv = 0; for(let l = 0; l < L.top; l++) if(!Rules.canPlace(L, st.blocks, st.inv, {type:'balc', x, z, lv:l, rot:0})){ lv = l; break; } return {kind:'balc', x, z, lv}; }
+  return {kind:'cell', x, z};
+}
+function planTap(x, z){
+  if(busy) return;
+  if(tool === 'post') return fail('鋼柱要在 3D 畫面點角柱的黃色圓點');
+  const h = planHover(x, z); if(!h) return fail('這格沒有東西可以拆');
+  setHover(h, true); act(h); setTimeout(() => { if(!planDown && !down) setHover(null); }, 60);
+}
+const planEl = $('plan'); let planDown = false;
+const planCellAt = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.closest ? el.closest('#plan .pc') : null; };
+planEl.addEventListener('pointerdown', e => { if(busy || mode !== 'game') return; const c = planCellAt(e); if(!c) return; SFX.unlock(); planDown = true; try{ planEl.setPointerCapture(e.pointerId); }catch(_){} setHover(planHover(+c.dataset.x, +c.dataset.z)); e.preventDefault(); });
+planEl.addEventListener('pointermove', e => { if(!planDown) return; const c = planCellAt(e); setHover(c ? planHover(+c.dataset.x, +c.dataset.z) : null); });
+planEl.addEventListener('pointerup', e => { if(!planDown) return; planDown = false; const c = planCellAt(e); if(c) planTap(+c.dataset.x, +c.dataset.z); else setHover(null); });
+planEl.addEventListener('pointercancel', () => { planDown = false; setHover(null); });
+new ResizeObserver(() => { if(mode === 'game' && L && st) renderPlan(); }).observe($('planBox'));
+// --- 受力數字 ---
+function drawLabels(){
+  const box = $('labels'); if(mode !== 'game' || !lastEval){ box.innerHTML = ''; return; }
+  const src = after || lastEval, crit = new Map(); let html = '';
+  if(showLabels) for(const s of src.segs){ if(!(s.load > 0)) continue; const k = s.cx + ',' + s.cz, c = crit.get(k), r = s.load/Math.max(.01, s.cap); if(!c || r > c.r) crit.set(k, {r, key:s.key}); }
+  const keep = new Set([...crit.values()].map(c => c.key));
+  for(const s of src.segs){
+    const over = s.load > s.cap; if(!(over || keep.has(s.key))) continue;
+    const p = screenOf(new THREE.Vector3(s.cx, s.lv < 0 ? roofY - .22 : roofY + s.lv*LV + .5, s.cz)), r = s.cap ? s.load/s.cap : 9;
+    html += `<span class="lab ${over ? 'r' : r >= .75 ? 'y' : 'g'}" style="left:${p.x.toFixed(0)}px;top:${p.y.toFixed(0)}px">${s.load}/${s.cap}</span>`;
+  }
+  box.innerHTML = html;
+}
+// --- 對話框 ---
+const modalEl = $('modal');
+function modal(t, html, btns){
+  $('mT').textContent = t; $('mB').innerHTML = html; const a = $('mA'); a.innerHTML = '';
+  for(const [label, fn, primary] of btns){ const b = document.createElement('button'); b.className = 'b' + (primary ? ' go' : ''); b.textContent = label; b.onclick = () => { SFX.click(); fn(); }; a.appendChild(b); }
+  modalEl.classList.add('show');
+}
+function closeModal(){ modalEl.classList.remove('show'); }
+function introModal(first){
+  const inv = toolsOf().map(k => `${k === 'post' ? '鋼柱' : TYPES[k].name} ×${L.inv[k]}`).join('、');
+  modal(`第 ${li+1} 關　${L.name}`, `<p>${L.story}</p><p class="hint">${esc(L.hint)}</p><p><b>零件：</b>${inv}</p><p><b>過關：</b>驗收通過，而且租金至少 ${L.stars[0]}（三星 ${L.stars[2]}）。</p>${first ? '' : '<ul><li>左邊是透視圖，右邊是平面圖，兩邊都可以點：手指按住滑動可以預覽，放開就蓋下去。</li><li>平面圖格子裡的數字＝已蓋幾層；<b>圓點＝那根柱子最吃緊的一段還能再扛多少</b>，預覽時會先變成蓋下去之後的數字。</li><li>虛線外圈放陽台，橘框是日照斜線有限高，十字是重心。</li><li>「透視」讓方塊變半透明；「受力數字」在透視圖上顯示每根柱子的負重。</li></ul>'}`,
+    first ? [['開始蓋', closeModal, 1]] : [['全部拆掉', () => { closeModal(); resetAll(); }], ['繼續', closeModal, 1]]);
+}
+
+function moveCanvas(to){ slot = to; to.appendChild(cvs); }
+function clearBlocks(){ meshes.clear(); clearGroup(blockGroup); clearGroup(fxGroup); colMeshes = []; markView = []; confetti = []; tweens.length = 0; }
+function startLevel(i){
+  li = i; L = LEVELS[i]; st = newState(L); hist = []; mode = 'game'; hover = null; hoverKey = ''; xray = false; chipState = null; flashKeys = new Set(); lastCounts = {}; rentShown = 0; busy = false;
+  tool = ['tin','steel','brick','rc','box'].find(k => (L.inv[k] || 0) > 0) || toolsOf()[0];
+  $('menu').style.display = 'none'; $('game').style.display = 'flex';
+  $('gName').innerHTML = `${li+1}・${esc(L.name)}<small>${esc(L.sub)}</small>`;
+  clearBlocks(); moveCanvas(stageSlot); buildEnv(L); fitCamera(); world.rotation.set(0,0,0); refresh();
+  window.scrollTo(0, 0); introModal(true);
+}
+const DEMO = {id:'demo', ch:2, W:3, D:3, top:4, rcCap:[[9,9,9,9],[9,9,9,9],[9,9,9,9],[9,9,9,9]], inv:{}, blocks:[
+  {type:'core',x:0,z:0,lv:0},{type:'stair',x:0,z:0,lv:1},{type:'stair',x:0,z:0,lv:2},{type:'brick',x:1,z:0,lv:0},{type:'rc',x:2,z:0,lv:0},{type:'sign',x:2,z:0,lv:1},{type:'steel',x:1,z:0,lv:1},{type:'tin',x:1,z:0,lv:2},
+  {type:'box',x:0,z:1,lv:0,rot:1},{type:'garden',x:1,z:1,lv:0},{type:'loft',x:2,z:1,lv:0},{type:'frame',x:1,z:2,lv:0},{type:'brick',x:1,z:2,lv:1},{type:'tin',x:2,z:2,lv:0},{type:'tank',x:2,z:2,lv:1},{type:'tin',x:0,z:1,lv:1},{type:'balc',x:-1,z:1,lv:0},{type:'balc',x:1,z:-1,lv:0},{type:'balc',x:3,z:1,lv:1}]};
+function showMenu(){
+  mode = 'menu'; closeModal(); $('menu').style.display = 'block'; $('game').style.display = 'none'; $('labels').innerHTML = ''; hover = null; prop = null; after = null; clearGroup(ghostGroup);
+  L = DEMO; xray = false; tool = 'tin'; st = {blocks:DEMO.blocks.map(b => Object.assign({rot:0}, b, {id:'d'+(nid++)})), posts:{}, inv:{}};
+  clearBlocks(); moveCanvas(heroSlot); buildEnv(L); heroSlot.className = 'sky-dusk'; fitCamera(); world.rotation.set(0,0,0);
+  lastEval = Rules.evaluate(L, st.blocks, {}); syncBlocks({lost:[], dark:[], weak:[]}); while(statusGroup.children.length) statusGroup.children.pop(); while(overlayGroup.children.length) overlayGroup.children.pop();
+  const total = LEVELS.reduce((s, lv) => s + (stars[lv.id] || 0), 0);
+  $('totStars').textContent = `★ ${total} / ${LEVELS.length*3}`;
+  $('chapters').innerHTML = CHAPTERS.map((ch, ci) => {
+    const lvs = LEVELS.map((lv, i) => [lv, i]).filter(q => q[0].ch === ci), got = lvs.reduce((s, q) => s + (stars[q[0].id] || 0), 0);
+    return `<div class="chap"><span>${esc(ch.name)}</span><small>★ ${got}/${lvs.length*3}</small></div><div class="levels">` + lvs.map(([lv, i]) => { const s = stars[lv.id] || 0; let mini = ''; for(let x = lv.W - 1; x >= 0; x--) for(let z = 0; z < lv.D; z++) mini += `<i class="${Rules.inside(lv, x, z) ? '' : 'v'}"></i>`;
+      return `<button class="lv" data-i="${i}"><b>第 ${i+1} 關・${esc(lv.sub)}</b><span class="mini" style="grid-template-columns:repeat(${lv.D},8px)">${mini}</span><span class="n">${esc(lv.name)}</span><span class="st">${'★'.repeat(s)}<i>${'★'.repeat(3-s)}</i></span></button>`; }).join('') + '</div>';
+  }).join('');
+  document.querySelectorAll('.lv').forEach(b => b.onclick = () => { SFX.unlock(); SFX.click(); startLevel(+b.dataset.i); });
+}
+// --- 按鈕 ---
+$('bUndo').onclick = () => { SFX.unlock(); undo(); };
+$('bMenu').onclick = () => { SFX.click(); showMenu(); };
+$('bHelp').onclick = () => { SFX.click(); introModal(false); };
+$('bCheck').onclick = () => { SFX.unlock(); verify(); };
+$('bRot').onclick = () => { rot = 1 - rot; SFX.select(); flashTip(rot ? '貨櫃方向：往右後方' : '貨櫃方向：往左後方'); tipEl.classList.remove('bad'); };
+$('bLab').onclick = () => { showLabels = !showLabels; SFX.click(); renderDock(); drawLabels(); };
+$('bXray').onclick = () => { xray = !xray; SFX.click(); for(const [, m] of meshes) applyTint(m); renderDock(); };
+const sndLabel = () => { $('bSound').style.opacity = SFX.muted ? .45 : 1; $('bSound').setAttribute('aria-pressed', String(!SFX.muted)); };
+$('bSound').onclick = () => { SFX.toggle(); sndLabel(); SFX.unlock(); SFX.select(); };
+sndLabel();
+
+// ===== 迴圈 =====
+function loop(t){
+  for(let i = tweens.length - 1; i >= 0; i--){ const w = tweens[i], k = Math.min(1, (t - w.t)/w.dur); w.fn(k); if(k >= 1){ tweens.splice(i, 1); if(w.done) w.done(); } }
+  if(mode === 'menu'){ menuYaw += .003; fitCamera(); }
+  world.position.set(0,0,0);
+  if(t < shakeT){ const a = shakeT - t > 200 ? .07 : .025; world.position.set((Math.random()-.5)*a, 0, (Math.random()-.5)*a); }
+  if(fx.quake){ const e = t - fx.quake; world.rotation.z = Math.sin(e/55)*fx.quakeAmp*Math.max(0, 1 - e/800); }
+  ghostGroup.position.y = .06 + Math.sin(t/180)*.04;
+  // 方塊發光狀態
+  for(const [id, m] of meshes){
+    const s = m.userData.status || {}; let r = 0, g = 0, b = 0;
+    if(s.lost || s.weak) r += .28 + .22*Math.sin(t/150);
+    if(fx.egress && fx.egDist){ const d = fx.egDist.get(id); if(d !== undefined){ const k = Math.max(0, 1 - Math.abs(t - fx.egress - d*110 - 90)/220); g += .75*k; } }
+    if(fx.light && s.room && !s.dark){ const k = Math.sin(Math.min(1, (t - fx.light)/460)*Math.PI); r += .5*k; g += .42*k; }
+    if(fx.weight && s.type === 'balc'){ m.position.y = s.home.y + Math.abs(Math.sin((t - fx.weight)/70))*.12; }
+    for(const mt of m.userData.mats) if(mt.emissive) mt.emissive.setRGB(r, g, b);
+    if(m.userData.sway) m.userData.sway.rotation.z = Math.sin(t/900 + m.position.x)*.05;
+    if(m.userData.neon) m.userData.neon.color.setScalar((Math.floor(t/400)%7 === 0) ? .55 : 1);
+  }
+  for(const m of colMeshes){ const s = m.userData.seg; let k = 1; if(m.userData.over) k = 1.5 + .6*Math.sin(t/110); if(fx.load){ k += 1.6*Math.max(0, 1 - Math.abs((t - fx.load)/85 - (s.lv + 1.5))); } m.scale.set(k, 1, k); }
+  if(envGroup && envGroup.userData.tree) envGroup.userData.tree.rotation.z = Math.sin(t/1100)*.03;
+  confetti = confetti.filter(c => { c.v.y -= .006; c.m.position.add(c.v); c.m.rotation.x += .2; c.m.rotation.y += .13; if(--c.life <= 0){ fxGroup.remove(c.m); c.m.geometry.dispose(); c.m.material.dispose(); return false; } return true; });
+  renderer.render(scene, cam);
+  requestAnimationFrame(loop);
+}
+makeIcons(); showMenu();
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { delete texCache.sign; delete texCache.shop; requestAnimationFrame(loop); });
+window.__g = {startLevel, get st(){ return st; }, get L(){ return L; }, LEVELS, place(p){ const why = Rules.canPlace(L, st.blocks, st.inv, p); if(why) return why; st.blocks.push(Object.assign({}, p, {id:'b'+(nid++)})); st.inv[p.type]--; refresh(); return ''; }, post(k){ st.posts[k] = (st.posts[k] || 0) + 1; st.inv.post--; refresh(); }, eval:() => Rules.evaluate(L, st.blocks, st.posts), verify, labels(v){ showLabels = v; drawLabels(); }, tool:k => selectTool(k), closeModal, screenOf:(x,y,z) => screenOf(new THREE.Vector3(x,y,z)), roofY};
+}
+
+</script>
+</body>
+</html>
